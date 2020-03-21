@@ -228,7 +228,7 @@ describe('CLI Simulation', () => {
     simulate(testStations, actors, paths);
   });
 
-  it.only('runs with real data', () => {
+  it('runs with real data', () => {
     const berlinStations = Object.fromEntries(
       Object.entries(berlinStationData['stations']).map(([key, value]) => {
         const next_stops = value.next_stops.map(stop => {
