@@ -1,12 +1,10 @@
 import L from 'leaflet';
 
 /**
- * Convert an objects x and y fields into a Leaflet L.LatLng object.
- * @param {any} positionObject An object containing x and y properties.
+ * Convert an objects lat and lng fields into a Leaflet L.LatLng object.
+ * @param {any} positionObject An object containing lat and lng properties.
  * @returns {L.LatLng}
  */
 export function getPosition(positionObject) {
-  // x --> longitude
-  // y --> latitude
-  return L.latLng(positionObject.y, positionObject.x);
+  return L.latLng(positionObject.lat, positionObject.lng);
 }
