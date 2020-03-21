@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
+import { renderStationMarkers } from './StationMarker';
+import { getPosition } from '../utils';
 
 // required leaflet styles
 import 'leaflet/dist/leaflet.css';
@@ -13,7 +15,27 @@ export default function SimulationMap({
   zoom,
   minZoom,
   maxZoom,
+  stations,
 }) {
+  if (!box.isValid()) {
+    throw new Error(`Bounding box is not valid: ${box}`);
+  }
+
+  if (!box.contains(position)) {
+    throw new Error(
+      `Map center ${position} is not inside the bounding box ${box}`
+    );
+  }
+
+  for (let [id, station] of Object.entries(stations)) {
+    const position = getPosition(station);
+    if (!box.contains(position)) {
+      throw new Error(
+        `Station ${id} at positiion ${position} is not contained in bounding box ${box}`
+      );
+    }
+  }
+
   return (
     <Map
       id="simulation-map"
@@ -27,6 +49,7 @@ export default function SimulationMap({
         attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {renderStationMarkers(stations)}
     </Map>
   );
 }
@@ -37,6 +60,7 @@ SimulationMap.propTypes = {
   zoom: PropTypes.number,
   minZoom: PropTypes.number,
   maxZoom: PropTypes.number,
+  stations: PropTypes.object.isRequired,
 };
 
 SimulationMap.defaultProps = {
