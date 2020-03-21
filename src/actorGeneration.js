@@ -1,10 +1,10 @@
-const HEALTHY = 0;
-const INFECTED = 1;
-const RECOVERED = 2;
-const DEAD = 3;
+export const HEALTHY = 0;
+export const INFECTED = 1;
+export const RECOVERED = 2;
+export const DEAD = 3;
 
-const WAITING = 0;
-const TRASITIONING = 1;
+export const WAITING = 0;
+export const TRASITIONING = 1;
 
 function selectRandom(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -104,7 +104,7 @@ export function generateActors(actorTemplate, stations) {
       generateScheduleEntry(scheduleTemplate, station_names)
     );
     const station_location = stations[schedule[0].station].position;
-    const actor = {
+    let actor = {
       status: HEALTHY,
       schedule,
       current_station: schedule[0].station,

@@ -7,7 +7,12 @@ import {
   MINUTES_PER_DAY,
 } from './simulation';
 import { testStations, testAgentsTemplate } from './testUtils';
-import { HEALTHY, generateActors, generatePaths } from './actorGeneration';
+import {
+  HEALTHY,
+  INFECTED,
+  generateActors,
+  generatePaths,
+} from './actorGeneration';
 
 function next(sim) {
   sim.time += TRAVEL_TIME - 1;
@@ -144,7 +149,7 @@ function minutesToTime(min) {
 
 describe('CLI Simulation', () => {
   it('runs', () => {
-    const actors = generateActors(testAgentsTemplate, testStations).map(
+    let actors = generateActors(testAgentsTemplate, testStations).map(
       (actor, index) => {
         actor.name = index;
         return actor;
@@ -153,12 +158,12 @@ describe('CLI Simulation', () => {
 
     const paths = generatePaths(actors, testStations);
 
-    console.log(JSON.stringify(actors, null, 2));
+    actors[0].status = INFECTED;
 
-    actors.forEach(actor => {
-      console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
-      console.log(actor.schedule);
-    });
+    // actors.forEach(actor => {
+    //   console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
+    //   console.log(actor.schedule);
+    // });
 
     let sim = new Simulator(testStations, actors, paths);
 
@@ -186,15 +191,16 @@ describe('CLI Simulation', () => {
       );
     }
 
-    sim.finishStayCallback = onLeave;
-    sim.arrivalCallback = onArrival;
-    sim.waitCallback = onWait;
+    // sim.finishStayCallback = onLeave;
+    // sim.arrivalCallback = onArrival;
+    // sim.waitCallback = onWait;
     sim.startActors();
 
+    const startTime = Date.now();
     const sim_days = 1;
     for (let day = 0; day < sim_days; ++day) {
-      console.log(`Day ${day}`);
-      console.log(`Sim: ${sim.day} ${sim.time}`);
+      // console.log(`Day ${day}`);
+      // console.log(`Sim: ${sim.day} ${sim.time}`);
       for (let minute = 0; minute < MINUTES_PER_DAY; ++minute) {
         if (minute === timeToMinutes(2002)) {
           let dummy;
@@ -202,5 +208,15 @@ describe('CLI Simulation', () => {
         sim.step();
       }
     }
+    const endTime = Date.now();
+    console.log(endTime - startTime);
+
+    const infected = actors.reduce((acc, actor) => {
+      return acc + (actor.status === INFECTED ? 1 : 0);
+    }, 0);
+
+    console.log(
+      `${infected} of ${actors.length} people are infected after ${sim_days} days.`
+    );
   });
 });

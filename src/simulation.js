@@ -1,8 +1,11 @@
 import PriorityQueue from 'js-priority-queue';
+import { INFECTED } from './actorGeneration';
 
+const logging = false;
 export const WAITING = 0;
 export const TRANSITIONING = 1;
 export const TRAVEL_TIME = 10;
+export const INFECTION_CHANCE = 1;
 
 export const MINUTES_PER_DAY = 24 * 60;
 
@@ -98,7 +101,6 @@ export class Simulator {
     actor.path = this.paths[currentStation][destination];
     actor.path_position = 0;
 
-    console.log(actor.path.length);
     if (actor.path.length === 1) {
       actor.path = null;
       actor.path_position = null;
@@ -155,7 +157,26 @@ export class Simulator {
   }
 
   handleInfectionTrigger(actors) {
-    // TODO infection logic
+    const infected = actors.reduce((acc, actor) => {
+      return acc + (actor.status === INFECTED ? 1 : 0);
+    }, 0);
+
+    let infection_chance = infected * INFECTION_CHANCE;
+    if (infection_chance > 1) {
+      infection_chance = 1;
+    }
+
+    if (logging && infection_chance > 0) {
+      console.log(
+        `Spreading the infection on ${actors.length} people with chance ${infection_chance}`
+      );
+    }
+
+    actors.forEach(actor => {
+      if (infection_chance > Math.random()) {
+        actor.status = INFECTED;
+      }
+    });
   }
 
   step() {
