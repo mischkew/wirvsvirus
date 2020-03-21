@@ -108,11 +108,7 @@ export function generateActors(actorTemplate, stations) {
     const actor = {
       status: HEALTHY,
       schedule,
-      position: {
-        x: station_location.x,
-        y: station_location.y,
-      },
-      current_station: schedule[0],
+      current_station: schedule[0].station,
       current_schedule: 0,
       state: WAITING,
       path: null,

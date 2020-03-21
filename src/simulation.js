@@ -39,6 +39,9 @@ export class Simulator {
         return [key, next_stops];
       })
     );
+
+    this.arrivalCallback = null;
+    this.finishStayCallback = null;
   }
 
   startActors() {
@@ -79,6 +82,10 @@ export class Simulator {
       const nextStation = actor.path[actor.path_position + 1];
       this.station_queues[currentStation][nextStation].push(actor);
     }
+
+    if (this.finishStayCallback !== null) {
+      this.finishStayCallback(actor, currentStation, destination);
+    }
   }
 
   actorScheduleWait(actor) {
@@ -106,9 +113,15 @@ export class Simulator {
       const nextStation = actor.path[actor.path_position + 1];
       this.station_queues[currentStation][nextStation].push(actor);
     }
+
+    if (this.arrivalCallback !== null) {
+      this.arrivalCallback(actor);
+    }
   }
 
-  handleInfectionTrigger(actors) {}
+  handleInfectionTrigger(actors) {
+    // TODO infection logic
+  }
 
   step() {
     this.stepTime();

@@ -4,6 +4,7 @@ import {
   WAITING,
   TRANSITIONING,
   timeToMinutes,
+  MINUTES_PER_DAY,
 } from './simulation';
 import { testStations, testAgentsTemplate } from './testUtils';
 import { HEALTHY, generateActors, generatePaths } from './actorGeneration';
@@ -134,5 +135,55 @@ describe('Simulator', () => {
     next(sim);
 
     expect(actor.current_station).toBe('BHF_TEGEL');
+  });
+});
+
+function minutesToTime(min) {
+  return Math.floor(min / 60) * 100 + (min % 60);
+}
+
+describe('CLI Simulation', () => {
+  it('runs', () => {
+    const actors = generateActors(testAgentsTemplate, testStations).map(
+      (actor, index) => {
+        actor.name = index;
+        return actor;
+      }
+    );
+    const paths = generatePaths(actors, testStations);
+
+    actors.forEach(actor => {
+      console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
+    });
+
+    let sim = new Simulator(testStations, actors, paths);
+
+    function onArrival(actor) {
+      console.log(
+        `${minutesToTime(sim.time)}: Actor ${actor.name} arrived at ${
+          actor.current_station
+        }`
+      );
+    }
+
+    function onLeave(actor, station, destination) {
+      console.log(
+        `${minutesToTime(sim.time)}: Actor ${
+          actor.name
+        } leaves ${station}, travels to ${destination}`
+      );
+    }
+
+    sim.finishStayCallback = onLeave;
+    sim.arrivalCallback = onArrival;
+    sim.startActors();
+
+    const sim_days = 10;
+    for (let day = 0; day < sim_days; ++day) {
+      console.log(`Day ${day}`);
+      for (let minute = 0; minute < MINUTES_PER_DAY; ++minute) {
+        sim.step();
+      }
+    }
   });
 });
