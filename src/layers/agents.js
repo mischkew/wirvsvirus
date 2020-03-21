@@ -65,6 +65,9 @@ L.AgentsLayer = L.Layer.extend({
     canvas.height = size.y;
     canvas.style.position = 'absolute';
 
+    // leaflet renders svg on z-index 200, so we put the canvas on top
+    canvas.style.zIndex = 201;
+
     var animated = this._map.options.zoomAnimation && L.Browser.any3d;
     L.DomUtil.addClass(
       canvas,
@@ -99,8 +102,6 @@ L.AgentsLayer = L.Layer.extend({
 
   _render: function() {
     this._draw = this._buildDraw();
-    console.log('render!');
-
     this._frameLoop = this._regl.frame(() => {
       const agents = this._simulation.step();
 
