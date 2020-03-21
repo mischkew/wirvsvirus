@@ -90,13 +90,17 @@ L.AgentsLayer = L.Layer.extend({
     return {
       time: 830,
       step: function() {
-        return [];
+        // don't return empty array here as otherwise the vertex shaders don't
+        // execute!
+        return null;
       },
     };
   },
 
   _render: function() {
     this._draw = this._buildDraw();
+    console.log('render!');
+
     this._frameLoop = this._regl.frame(() => {
       const agents = this._simulation.step();
 
