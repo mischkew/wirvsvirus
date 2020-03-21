@@ -1,0 +1,46 @@
+{
+    "stations": {
+        "BHF_TEGEL": {
+            "name": "Tegel",
+            "x": 1,
+            "y": 1,
+            "next_stops": [
+                "BHF_FRIEDRICHSTRASSE"
+            ]
+        },
+        "BHF_SUDKREUZ": {
+            "name": "Sudkreuz",
+            "x": 3,
+            "y": 2,
+            "next_stops": [
+                "BHF_FRIEDRICHSTRASSE"
+            ]
+        },
+        "BHF_GRIEBNITZSEE": {
+            "name": "Griebnitzsee",
+            "x": 4,
+            "y": 1,
+            "next_stops": [
+                "BHF_CHARLOTTENBURG"
+            ]
+        },
+        "BHF_FRIEDRICHSTRASSE": {
+            "name": "Friedrichstrasse",
+            "x": 2,
+            "y": 1,
+            "next_stops": [
+                "BHF_CHARLOTTENBURG",
+                "BHF_TEGEL"
+            ]
+        },
+        "BHF_CHARLOTTENBURG": {
+            "name": "Charlottenburg",
+            "x": 3,
+            "y": 1,
+            "next_stops": [
+                "BHF_FRIEDRICHSTRASSE",
+                "BHF_GRIEBNITZSEE"
+            ]
+        }
+    }
+}
