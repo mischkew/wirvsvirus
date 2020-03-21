@@ -110,7 +110,7 @@ describe('Simulator', () => {
     expect(actor.path).toBe(null);
   });
 
-  it('should do a full tour for an actor', () => {
+  it('should do a full tour for all actors', () => {
     const actor = actors[0];
     let sim = new Simulator(testStations, actors, paths);
     sim.startActors();
@@ -150,10 +150,14 @@ describe('CLI Simulation', () => {
         return actor;
       }
     );
+
     const paths = generatePaths(actors, testStations);
+
+    console.log(JSON.stringify(actors, null, 2));
 
     actors.forEach(actor => {
       console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
+      console.log(actor.schedule);
     });
 
     let sim = new Simulator(testStations, actors, paths);
@@ -166,22 +170,35 @@ describe('CLI Simulation', () => {
       );
     }
 
-    function onLeave(actor, station, destination) {
+    function onLeave(actor, station, destination, name) {
       console.log(
         `${minutesToTime(sim.time)}: Actor ${
           actor.name
-        } leaves ${station}, travels to ${destination}`
+        } leaves ${station}, travels to ${destination}, purpose ${name}`
+      );
+    }
+
+    function onWait(actor, day, time) {
+      console.log(
+        `${minutesToTime(sim.time)}: Actor ${actor.name} waits at ${
+          actor.current_station
+        } until Day ${day}, Hours ${minutesToTime(time)}`
       );
     }
 
     sim.finishStayCallback = onLeave;
     sim.arrivalCallback = onArrival;
+    sim.waitCallback = onWait;
     sim.startActors();
 
-    const sim_days = 10;
+    const sim_days = 1;
     for (let day = 0; day < sim_days; ++day) {
       console.log(`Day ${day}`);
+      console.log(`Sim: ${sim.day} ${sim.time}`);
       for (let minute = 0; minute < MINUTES_PER_DAY; ++minute) {
+        if (minute === timeToMinutes(2002)) {
+          let dummy;
+        }
         sim.step();
       }
     }

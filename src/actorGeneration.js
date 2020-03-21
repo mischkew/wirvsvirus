@@ -31,9 +31,8 @@ export function generateScheduleEntry(template, stations) {
     template.probability.variance
   );
 
-  entry.stay_until = sampleTime(
-    template.stay_until.time,
-    template.stay_until.variance
+  entry.stay_until = Math.floor(
+    sampleTime(template.stay_until.time, template.stay_until.variance)
   );
 
   return entry;
