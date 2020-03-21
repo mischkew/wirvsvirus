@@ -1,0 +1,31 @@
+{
+  //
+  // Common Configs
+  //
+  "files.watcherExclude": {
+    // Exclude Javascript related files
+    "**/node_modules/**": true
+  },
+  "editor.formatOnSave": true,
+  "editor.rulers": [80],
+  //
+  // Javascript with JSX
+  //
+  "[javascript]": {
+    "editor.rulers": [80, 100],
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.rulers": [80, 100],
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "prettier.packageManager": "yarn",
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "es5",
+  //
+  // Git
+  //
+  "[gitcommitmessage]": {
+    "editor.rulers": [72, 80]
+  }
+}
