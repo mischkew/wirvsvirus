@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Map, TileLayer } from 'react-leaflet';
+import L from 'leaflet';
 
 // required leaflet styles
 import 'leaflet/dist/leaflet.css';
@@ -13,27 +14,14 @@ export default function SimulationMap({
   minZoom,
   maxZoom,
 }) {
-  const positionTuple = [position.lat, position.lng];
-
-  function buildBoxTuple() {
-    if (box === null) {
-      return null;
-    }
-
-    return [
-      [box.topLeft.lat, box.topLeft.lng],
-      [box.bottomRight.lat, box.bottomRight.lng],
-    ];
-  }
-
   return (
     <Map
       id="simulation-map"
-      center={positionTuple}
+      center={position}
       zoom={zoom}
       minZoom={minZoom}
       maxZoom={maxZoom}
-      maxBounds={buildBoxTuple()}
+      maxBounds={box}
     >
       <TileLayer
         attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -43,19 +31,9 @@ export default function SimulationMap({
   );
 }
 
-const positionProp = PropTypes.shape({
-  lat: PropTypes.number.isRequired,
-  lng: PropTypes.number.isRequired,
-});
-
-const boxProp = PropTypes.shape({
-  topLeft: positionProp.isRequired,
-  bottomRight: positionProp.isRequired,
-});
-
 SimulationMap.propTypes = {
-  position: positionProp.isRequired,
-  box: boxProp,
+  position: PropTypes.instanceOf(L.LatLng).isRequired,
+  box: PropTypes.instanceOf(L.LatLngBounds),
   zoom: PropTypes.number,
   minZoom: PropTypes.number,
   maxZoom: PropTypes.number,
