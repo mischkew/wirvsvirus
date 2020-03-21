@@ -14,6 +14,8 @@ import {
   generatePaths,
 } from './actorGeneration';
 
+import berlinStationData from './assets/stations.json';
+
 function next(sim) {
   sim.time += TRAVEL_TIME - 1;
   sim.step();
@@ -148,16 +150,7 @@ function minutesToTime(min) {
 }
 
 describe('CLI Simulation', () => {
-  it('runs', () => {
-    let actors = generateActors(testAgentsTemplate, testStations).map(
-      (actor, index) => {
-        actor.name = index;
-        return actor;
-      }
-    );
-
-    const paths = generatePaths(actors, testStations);
-
+  function simulate(stations, actors, paths) {
     actors[0].status = INFECTED;
 
     // actors.forEach(actor => {
@@ -218,5 +211,26 @@ describe('CLI Simulation', () => {
     console.log(
       `${infected} of ${actors.length} people are infected after ${sim_days} days.`
     );
+  }
+
+  it('runs with example data', () => {
+    let actors = generateActors(testAgentsTemplate, testStations).map(
+      (actor, index) => {
+        actor.name = index;
+        return actor;
+      }
+    );
+
+    const paths = generatePaths(actors, testStations);
+
+    simulate(testStations, actors, paths);
+  });
+
+  it('runs with real data', () => {
+    const berlinStations = berlinStationData['stations'];
+    let actors = generateActors(testAgentsTemplate, berlinStations);
+    const paths = generatePaths(actors, berlinStations);
+
+    // simulate(berlinStations, actors, paths);
   });
 });

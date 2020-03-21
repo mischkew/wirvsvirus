@@ -38,7 +38,7 @@ export function generateScheduleEntry(template, stations) {
   return entry;
 }
 
-export function generatePath(start, end, stations) {
+export function generatePredecessorMap(start, stations) {
   let queue = [];
   let seen = new Set();
   let predecessor = { [start]: null };
@@ -56,11 +56,15 @@ export function generatePath(start, end, stations) {
     });
   }
 
+  return predecessor;
+}
+
+export function generatePathFromPredecessorMap(map, end) {
   let currentStation = end;
   let path = [];
   while (currentStation !== null) {
     path.unshift(currentStation);
-    currentStation = predecessor[currentStation];
+    currentStation = map[currentStation];
     if (currentStation === undefined) {
       throw new Error(
         'Graph is not connected! Maybe there is an unidirectional edge?'
@@ -71,8 +75,19 @@ export function generatePath(start, end, stations) {
   return path;
 }
 
+export function generatePath(start, end, stations) {
+  return generatePathFromPredecessorMap(
+    generatePredecessorMap(start, stations),
+    end
+  );
+}
+
 export function generatePaths(actors, stations) {
   let paths = {};
+  let maps = {};
+  Object.keys(stations).forEach((station, index, arr) => {
+    maps[station] = generatePredecessorMap(station, stations);
+  });
   actors.forEach(actor => {
     actor.schedule.forEach((entry, index, arr) => {
       const start = entry.station;
@@ -90,7 +105,7 @@ export function generatePaths(actors, stations) {
         return;
       }
 
-      paths[start][end] = generatePath(start, end, stations);
+      paths[start][end] = generatePathFromPredecessorMap(maps[start], end);
     });
   });
 
