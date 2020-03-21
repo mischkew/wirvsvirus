@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import { getPosition } from '../utils';
+import { BLUE_DARK, BLUE_LIGHTER } from '../branding';
 
 export default function StationMarker({ position }) {
   return (
@@ -10,8 +11,9 @@ export default function StationMarker({ position }) {
       center={position}
       radius={6}
       weight={3}
-      color="#3b6978" // Color Palette: https://colorhunt.co/palette/177866
-      fillOpacity={0.4}
+      color={BLUE_DARK}
+      fillOpacity={1}
+      fillColor={BLUE_LIGHTER}
     />
   );
 }
