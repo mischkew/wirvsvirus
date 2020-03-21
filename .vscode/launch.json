@@ -15,13 +15,18 @@
       "name": "Debug CRA Tests",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "${workspaceRoot}/frontend/react-client/node_modules/.bin/react-scripts",
-      "args": ["test", "--runInBand", "--no-cache", "--watchAll=false"],
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/react-scripts",
+      "args": [
+        "test",
+        "--runInBand",
+        "--no-cache",
+        "--watchAll=false"
+      ],
       "env": {
-        "PATH": "/home/sven/.nvm/versions/node/v10.16.0/bin:${env:PATH}",
+        "PATH": "~/.nvm/versions/node/v10.16.0/bin:${env:PATH}",
         "CI": "true"
       },
-      "cwd": "${workspaceRoot}/frontend/react-client",
+      "cwd": "${workspaceRoot}",
       "protocol": "inspector",
       // "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
