@@ -5,6 +5,7 @@ import L from 'leaflet';
 import Edges from './Edges';
 import { renderStationMarkers } from './StationMarker';
 import { getPosition } from '../utils';
+import AgentsLayer from './AgentsLayer';
 
 // required leaflet styles
 import 'leaflet/dist/leaflet.css';
@@ -52,6 +53,8 @@ export default function SimulationMap({
       />
       <Edges stations={stations} />
       {renderStationMarkers(stations)}
+      {/* TODO: pass actual agents simulation options */}
+      <AgentsLayer stations={stations} simulationOptions={{}} />
     </Map>
   );
 }
