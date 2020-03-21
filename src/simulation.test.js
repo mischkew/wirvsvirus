@@ -16,7 +16,6 @@ import {
 } from './actorGeneration';
 
 import berlinStationData from './assets/stations.json';
-import ccjson from './assets/cc.json';
 
 function next(sim) {
   sim.time += TRAVEL_TIME - 1;
@@ -204,7 +203,7 @@ describe('CLI Simulation', () => {
       }
     }
     const endTime = Date.now();
-    console.log(endTime - startTime);
+    console.log(`Simlation Time: ${endTime - startTime}ms`);
 
     const infected = actors.reduce((acc, actor) => {
       return acc + (actor.status === INFECTED ? 1 : 0);
@@ -246,13 +245,11 @@ describe('CLI Simulation', () => {
 
     expect(all_next_stops.size).toBe(Object.keys(cc).length);
 
-    let actors = generateActors(testAgentsTemplate, ccjson).map(
-      (actor, index) => {
-        actor.name = index;
-        return actor;
-      }
-    );
-    const paths = generatePaths(actors, ccjson);
+    let actors = generateActors(testAgentsTemplate, cc).map((actor, index) => {
+      actor.name = index;
+      return actor;
+    });
+    const paths = generatePaths(actors, cc);
 
     simulate(berlinStations, actors, paths);
   });
