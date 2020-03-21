@@ -1,42 +1,32 @@
 export const testStations = {
   BHF_TEGEL: {
     name: 'Tegel',
-    position: {
-      x: 1,
-      y: 1,
-    },
+    lat: 52.57,
+    lng: 13.4,
     next_stops: ['BHF_FRIEDRICHSTRASSE'],
   },
   BHF_SUDKREUZ: {
     name: 'Sudkreuz',
-    position: {
-      x: 3,
-      y: 2,
-    },
+    lat: 52.53,
+    lng: 13.4,
     next_stops: ['BHF_FRIEDRICHSTRASSE'],
   },
   BHF_GRIEBNITZSEE: {
     name: 'Griebnitzsee',
-    position: {
-      x: 4,
-      y: 1,
-    },
+    lat: 52.5,
+    lng: 13.4,
     next_stops: ['BHF_CHARLOTTENBURG'],
   },
   BHF_FRIEDRICHSTRASSE: {
     name: 'Friedrichstrasse',
-    position: {
-      x: 2,
-      y: 1,
-    },
+    lat: 52.52,
+    lng: 13.4,
     next_stops: ['BHF_CHARLOTTENBURG', 'BHF_TEGEL', 'BHF_SUDKREUZ'],
   },
   BHF_CHARLOTTENBURG: {
     name: 'Charlottenburg',
-    position: {
-      x: 3,
-      y: 1,
-    },
+    lat: 52.454,
+    lng: 13.4,
     next_stops: ['BHF_FRIEDRICHSTRASSE', 'BHF_GRIEBNITZSEE'],
   },
 };
