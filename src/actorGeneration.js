@@ -62,6 +62,11 @@ export function generatePath(start, end, stations) {
   while (currentStation !== null) {
     path.unshift(currentStation);
     currentStation = predecessor[currentStation];
+    if (currentStation === undefined) {
+      throw new Error(
+        'Graph is not connected! Maybe there is an unidirectional edge?'
+      );
+    }
   }
 
   return path;
@@ -72,11 +77,13 @@ export function generatePaths(actors, stations) {
   actors.forEach(actor => {
     actor.schedule.forEach((entry, index, arr) => {
       const start = entry.station;
+      let end;
       if (index === arr.length - 1) {
-        return;
+        end = arr[0].station;
+      } else {
+        const nextEntry = arr[index + 1];
+        end = nextEntry.station;
       }
-      const nextEntry = arr[index + 1];
-      const end = nextEntry.station;
       if (!(start in paths)) {
         paths[start] = {};
       }
