@@ -1,0 +1,40 @@
+{
+    "agents": [
+        {
+            "status": "HEALTHY | INFECTED | RECOVERED | DEAD",
+            "current_station": "BHF_POTSDAM",
+            "position": {
+                "x": 1,
+                "y": 1,
+            },
+            "current_schedule": 0,
+            "state": "WAITING | TRANSITIONING",
+            "schedule": [
+                {
+                    "station": "BHF_POTSDAM",
+                    "name": "residence",
+                    "probablity": 1,
+                    "stay_until": 847,
+                },
+                {
+                    "station": "BHF_ZOO",
+                    "name": "work",
+                    "probablity": 1,
+                    "stay_until": 1707,
+                },
+                {
+                    "station": "BHF_POTSDAM",
+                    "name": "residence",
+                    "probablity": 1,
+                    "stay_until": 847,
+                },
+                {
+                    "station": "BHF_POTSDAM",
+                    "name": "residence",
+                    "probablity": 1,
+                    "stay_until": 847,
+                }
+            ]
+        }
+    ]
+

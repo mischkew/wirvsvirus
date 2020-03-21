@@ -1,0 +1,13 @@
+{
+    "stations": {
+        "BHF_ZOO": {
+            "name": "Zoologischer Garten",
+            "x": 10,
+            "y": 20,
+            "next_stops": [
+                "BHF_CHARLOTTENBURG",
+                "blabla",
+            ]
+        }
+    }
+}

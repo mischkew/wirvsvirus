@@ -1,0 +1,9 @@
+{
+    "name": "S 7",
+    "id": "S_7",
+    "stations": [
+        "BHF_POTSDAM",
+        "BHF_WESTKREUZ",
+        "BHF_ZOO"
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "paths": [
+        {
+            "start": "BHF_POTSDAM",
+            "end": "BHF_GRUNEWALD",
+            "path": [
+                {
+                    "x": ...,
+                    "y": ...,
+                },
+                {
+                    ...
+                },
+            ]
+        }
+    ]
+}
