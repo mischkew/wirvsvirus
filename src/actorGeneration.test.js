@@ -2,6 +2,7 @@ import {
   generateScheduleEntry,
   generateActors,
   sampleRange,
+  generatePath,
 } from './actorGeneration';
 describe('sampleRange', () => {
   it('produces numbers', () => {
@@ -93,7 +94,7 @@ describe('generateActors', () => {
         name: 'leisure',
         probability: {
           value: 0.3,
-          variance: 0,
+          variance: 0.1,
         },
         stay_until: {
           time: 2100,
@@ -104,7 +105,7 @@ describe('generateActors', () => {
         name: 'shopping',
         probability: {
           value: 0.2,
-          variance: 0,
+          variance: 0.1,
         },
         stay_until: {
           time: 1900,
@@ -116,5 +117,61 @@ describe('generateActors', () => {
 
   const actors = generateActors(agentsTemplate, stations);
 
-  console.log(JSON.stringify(actors, null, 2));
+  //console.log(JSON.stringify(actors, null, 2));
+});
+
+describe('generatePaths', () => {
+  it('handles straight lines', () => {
+    const stations = {
+      A: {
+        next_stops: ['B'],
+      },
+      B: {
+        next_stops: ['A', 'C'],
+      },
+      C: {
+        next_stops: ['B'],
+      },
+    };
+
+    const hinweg = generatePath('A', 'C', stations);
+
+    expect(hinweg).toEqual(['A', 'B', 'C']);
+
+    const rueckweg = generatePath('C', 'A', stations);
+
+    expect(rueckweg).toEqual(['C', 'B', 'A']);
+  });
+
+  it('finds the shortest path', () => {
+    /* A - B - C
+       |     /
+       D - E
+    */
+    const stations = {
+      A: {
+        next_stops: ['B', 'D'],
+      },
+      B: {
+        next_stops: ['A', 'C'],
+      },
+      C: {
+        next_stops: ['B'],
+      },
+      D: {
+        next_stops: ['E', 'A'],
+      },
+      E: {
+        next_stops: ['D', 'C'],
+      },
+    };
+
+    const hinweg = generatePath('A', 'C', stations);
+
+    expect(hinweg).toEqual(['A', 'B', 'C']);
+
+    const rueckweg = generatePath('C', 'A', stations);
+
+    expect(rueckweg).toEqual(['C', 'B', 'A']);
+  });
 });

@@ -1,6 +1,3 @@
-import graph from '../data/stations.json';
-import actorTemplate from '../data/actor.json';
-
 const HEALTHY = 0;
 const INFECTED = 1;
 const RECOVERED = 2;
@@ -40,6 +37,34 @@ export function generateScheduleEntry(template, stations) {
   );
 
   return entry;
+}
+
+export function generatePath(start, end, stations) {
+  let queue = [];
+  let seen = new Set();
+  let predecessor = { [start]: null };
+  seen.add(start);
+  queue.push(start);
+
+  while (queue.length > 0) {
+    const currentStation = queue.shift();
+    stations[currentStation].next_stops.forEach(station => {
+      if (!seen.has(station)) {
+        predecessor[station] = currentStation;
+        seen.add(station);
+        queue.push(station);
+      }
+    });
+  }
+
+  let currentStation = end;
+  let path = [];
+  while (currentStation !== null) {
+    path.unshift(currentStation);
+    currentStation = predecessor[currentStation];
+  }
+
+  return path;
 }
 
 export function generateActors(actorTemplate, stations) {
