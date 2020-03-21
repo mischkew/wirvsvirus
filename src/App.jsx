@@ -1,24 +1,20 @@
 import React from 'react';
-import logo from './logo.svg';
+import SimulationMap from './components/SimulationMap';
+import L from 'leaflet';
 import './App.css';
+import { stations } from './assets/stations.json';
+
+const berlinCenter = L.latLng(52.52885, 13.40456);
+const berlincBox = L.latLngBounds(L.latLng(52.4, 13.1), L.latLng(52.6, 13.7));
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <SimulationMap
+        position={berlinCenter}
+        box={berlincBox}
+        stations={stations}
+      />
     </div>
   );
 }

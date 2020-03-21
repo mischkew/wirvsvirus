@@ -1,0 +1,19 @@
+{
+  "stations": {
+    "BHF_CHARLOTTENBURG": {
+      "lng": 13.4621,
+      "lat": 52.45,
+      "next_stops": ["BHF_ZOO"]
+    },
+    "BHF_WESTKREUZ": {
+      "lng": 13.6,
+      "lat": 52.45,
+      "next_stops": ["BHF_ZOO"]
+    },
+    "BHF_ZOO": {
+      "lng": 13.4432,
+      "lat": 52.5543,
+      "next_stops": ["BHF_CHARLOTTENBURG", "BHF_WESTKREUZ"]
+    }
+  }
+}

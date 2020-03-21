@@ -1,3 +1,8 @@
+html,
+body {
+  min-height: 720px;
+}
+
 .App {
   text-align: center;
 }
