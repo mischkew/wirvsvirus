@@ -12,9 +12,11 @@ import {
   INFECTED,
   generateActors,
   generatePaths,
+  getLargestCC,
 } from './actorGeneration';
 
 import berlinStationData from './assets/stations.json';
+import ccjson from './assets/cc.json';
 
 function next(sim) {
   sim.time += TRAVEL_TIME - 1;
@@ -158,7 +160,7 @@ describe('CLI Simulation', () => {
     //   console.log(actor.schedule);
     // });
 
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(stations, actors, paths);
 
     function onArrival(actor) {
       console.log(
@@ -226,11 +228,32 @@ describe('CLI Simulation', () => {
     simulate(testStations, actors, paths);
   });
 
-  it('runs with real data', () => {
-    const berlinStations = berlinStationData['stations'];
-    let actors = generateActors(testAgentsTemplate, berlinStations);
-    const paths = generatePaths(actors, berlinStations);
+  it.only('runs with real data', () => {
+    const berlinStations = Object.fromEntries(
+      Object.entries(berlinStationData['stations']).map(([key, value]) => {
+        const next_stops = value.next_stops.map(stop => {
+          return stop + '';
+        });
+        return [key + '', { ...value, next_stops }];
+      })
+    );
+    const cc = getLargestCC(berlinStations);
 
-    // simulate(berlinStations, actors, paths);
+    const all_next_stops = Object.entries(cc).reduce((acc, [key, value]) => {
+      value.next_stops.forEach(stop => acc.add(stop));
+      return acc;
+    }, new Set());
+
+    expect(all_next_stops.size).toBe(Object.keys(cc).length);
+
+    let actors = generateActors(testAgentsTemplate, ccjson).map(
+      (actor, index) => {
+        actor.name = index;
+        return actor;
+      }
+    );
+    const paths = generatePaths(actors, ccjson);
+
+    simulate(berlinStations, actors, paths);
   });
 });
