@@ -1,12 +1,9 @@
 import L, { Util } from 'leaflet';
 import regl from 'regl';
-
-//
-// Shader Colors
-//
-
-const TRANSPARENT = [0, 0, 0, 0];
-const AGENT_HEALTHY_COLOR = [0, 1, 0];
+import { generatePaths, generateActors } from '../actorGeneration';
+import { Simulator } from '../simulation';
+import { getPosition } from '../utils';
+import { TRANSPARENT_RGBA, HEALTHY_RGB } from '../branding';
 
 //
 // Leaflet Layer
@@ -88,25 +85,21 @@ L.AgentsLayer = L.Layer.extend({
   },
 
   _initSimulation: function() {
-    // A dummy simulation providing time and a step function
-    // @tbjoerns simulator needs to be created here
-    return {
-      time: 830,
-      step: function() {
-        // don't return empty array here as otherwise the vertex shaders don't
-        // execute!
-        return null;
-      },
-    };
+    const actors = generateActors(this.options.simulation, this._stations);
+    const paths = generatePaths(actors, this._stations);
+    return new Simulator(this._stations, actors, paths);
   },
 
   _render: function() {
     this._draw = this._buildDraw();
-    this._frameLoop = this._regl.frame(() => {
-      const agents = this._simulation.step();
 
+    // TODO: only get the first iteration for now
+    const agents = this._simulation.step();
+
+    this._frameLoop = this._regl.frame(() => {
+      // TODO: generate agents here in a loop!
       this._regl.clear({
-        color: TRANSPARENT,
+        color: TRANSPARENT_RGBA,
       });
 
       this._draw(agents);
@@ -114,43 +107,81 @@ L.AgentsLayer = L.Layer.extend({
   },
 
   _buildDraw: function() {
-    return this._regl({
-      frag: `
-        precision mediump float;
+    const stationPositions = new Map(
+      Object.entries(this._stations).map(([id, station]) => [
+        id,
+        getPosition(station),
+      ])
+    );
+    const mapSize = this._map.getSize();
 
-        varying vec3 frag_color;
+    return function draw(agents) {
+      const stations = agents.map(
+        agent => agent.schedule[agent.current_schedule].station
+      );
+      const coordinates = stations.map(station =>
+        this._map.latLngToContainerPoint(stationPositions.get(station))
+      );
 
-        void main() {
-          gl_FragColor = vec4(frag_color, 1.0);
-        }
+      this._regl({
+        frag: `
+          precision mediump float;
+
+          // input RGB color with values between 0 and 255
+          varying vec3 frag_color;
+
+          void main() {
+            // colors need to be mapped between 0 and 1
+            gl_FragColor = vec4(frag_color / 255.0, 1.0);
+          }
       `,
-      vert: `
-        precision mediump float;
+        vert: `
+          precision lowp float;
 
-        attribute vec2 position;
+          attribute vec2 position;
 
-        uniform float pointWidth;
-        uniform vec3 color;
+          uniform float pointWidth;
+          uniform vec3 color;
+          uniform float mapWidth;
+          uniform float mapHeight;
 
-        varying vec3 frag_color;
+          varying vec3 frag_color;
 
-        void main() {
-          frag_color = color;
+          // helper function to transform from pixel space to normalized device
+          // coordinates (NDC) in NDC (0,0) is the middle, (-1, 1) is the top
+          // left and (1, -1) is the bottom right.
+          vec2 normalizeCoords(vec2 position) {
+            // read in the positions into x and y vars
+            float x = position[0];
+            float y = position[1];
 
-          gl_PointSize = pointWidth;
-          gl_Position = vec4(position, 0.0, 1.0);
-        }
+            return vec2(
+              2.0 * ((x / mapWidth) - 0.5),
+              -2.0 * ((y / mapHeight) - 0.5)
+            );
+          }
+
+          void main() {
+            frag_color = color;
+            vec2 offset = randomOffset();
+
+            gl_PointSize = pointWidth;
+            gl_Position = vec4(normalizeCoords(position) + offset, 0.0, 1.0);
+          }
       `,
-      attributes: {
-        position: [[0.0, 0.0]],
-      },
-      uniforms: {
-        pointWidth: 30.0,
-        color: AGENT_HEALTHY_COLOR,
-      },
-      count: 1,
-      primitive: 'points',
-    });
+        attributes: {
+          position: coordinates.map(c => [c.x, c.y]),
+        },
+        uniforms: {
+          pointWidth: 3.0,
+          color: HEALTHY_RGB,
+          mapWidth: mapSize.x,
+          mapHeight: mapSize.y,
+        },
+        count: coordinates.length,
+        primitive: 'points',
+      })();
+    };
   },
 
   _resize: function(event) {
@@ -166,6 +197,7 @@ L.AgentsLayer = L.Layer.extend({
     const topLeft = this._map.containerPointToLayerPoint([0, 0]);
     L.DomUtil.setPosition(this._canvas, topLeft);
 
+    this._simulation = this._initSimulation();
     this._draw = this._buildDraw();
   },
 

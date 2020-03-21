@@ -18,6 +18,7 @@ export default function SimulationMap({
   minZoom,
   maxZoom,
   stations,
+  simulationOptions,
 }) {
   if (!box.isValid()) {
     throw new Error(`Bounding box is not valid: ${box.toBBoxString()}`);
@@ -53,8 +54,7 @@ export default function SimulationMap({
       />
       <Edges stations={stations} />
       {renderStationMarkers(stations)}
-      {/* TODO: pass actual agents simulation options */}
-      <AgentsLayer stations={stations} simulationOptions={{}} />
+      <AgentsLayer stations={stations} simulationOptions={simulationOptions} />
     </Map>
   );
 }
@@ -66,6 +66,7 @@ SimulationMap.propTypes = {
   minZoom: PropTypes.number,
   maxZoom: PropTypes.number,
   stations: PropTypes.object.isRequired,
+  simulationOptions: PropTypes.object.isRequired,
 };
 
 SimulationMap.defaultProps = {

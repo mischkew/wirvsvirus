@@ -19,7 +19,7 @@ export const testStations = {
   },
   BHF_FRIEDRICHSTRASSE: {
     name: 'Friedrichstrasse',
-    lat: 52.52,
+    lat: 52.51,
     lng: 13.4,
     next_stops: ['BHF_CHARLOTTENBURG', 'BHF_TEGEL', 'BHF_SUDKREUZ'],
   },
@@ -32,7 +32,7 @@ export const testStations = {
 };
 
 export const testAgentsTemplate = {
-  count: 4,
+  count: 10,
   recovery_time: 10,
   infection_probability: 0.2,
   schedule: [
