@@ -67,6 +67,30 @@ export function generatePath(start, end, stations) {
   return path;
 }
 
+export function generatePaths(actors, stations) {
+  let paths = {};
+  actors.forEach(actor => {
+    actor.schedule.forEach((entry, index, arr) => {
+      const start = entry.station;
+      if (index === arr.length - 1) {
+        return;
+      }
+      const nextEntry = arr[index + 1];
+      const end = nextEntry.station;
+      if (!(start in paths)) {
+        paths[start] = {};
+      }
+      if (end in paths[start]) {
+        return;
+      }
+
+      paths[start][end] = generatePath(start, end, stations);
+    });
+  });
+
+  return paths;
+}
+
 export function generateActors(actorTemplate, stations) {
   const station_names = Object.keys(stations);
   const actors = Array.from(Array(actorTemplate.count).keys()).map(index => {
