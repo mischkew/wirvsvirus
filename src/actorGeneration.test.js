@@ -1,0 +1,120 @@
+import {
+  generateScheduleEntry,
+  generateActors,
+  sampleRange,
+} from './actorGeneration';
+describe('sampleRange', () => {
+  it('produces numbers', () => {
+    const output = sampleRange(100, 10);
+    expect(output).toBeLessThan(110);
+    expect(output).toBeGreaterThanOrEqual(90);
+  });
+});
+describe('generateStation', () => {
+  it('generates a station according to a template', () => {
+    const template = {
+      name: 'leisure',
+      probability: {
+        value: 0.5,
+        variance: 0.1,
+      },
+      stay_until: {
+        time: 2100,
+        variance: 100,
+      },
+    };
+
+    const stations = ['BHF_A', 'BHF_B'];
+
+    const expectedEntry = {
+      station: 'BHF_A',
+      name: 'leisure',
+      probability: 0.5,
+      stay_until: 2100,
+    };
+
+    const entry = generateScheduleEntry(template, stations);
+
+    expect(stations).toContain(entry.station);
+    expect(entry.name).toBe(expectedEntry.name);
+    expect(entry.probability).toBeLessThan(
+      template.probability.value + template.probability.variance
+    );
+    expect(entry.probability).toBeGreaterThan(
+      template.probability.value - template.probability.variance
+    );
+  });
+});
+
+describe('generateActors', () => {
+  const stations = {
+    BHF_A: {
+      position: {
+        x: 1,
+        y: 1,
+      },
+    },
+    BHF_B: {
+      position: {
+        x: 2,
+        y: 2,
+      },
+    },
+  };
+
+  const agentsTemplate = {
+    count: 5,
+    recovery_time: 10,
+    infection_probability: 0.2,
+    schedule: [
+      {
+        name: 'residence',
+        probability: {
+          value: 1,
+          variance: 0,
+        },
+        stay_until: {
+          time: 800,
+          variance: 100,
+        },
+      },
+      {
+        name: 'work',
+        probability: {
+          value: 1,
+          variance: 0,
+        },
+        stay_until: {
+          time: 1700,
+          variance: 100,
+        },
+      },
+      {
+        name: 'leisure',
+        probability: {
+          value: 0.3,
+          variance: 0,
+        },
+        stay_until: {
+          time: 2100,
+          variance: 100,
+        },
+      },
+      {
+        name: 'shopping',
+        probability: {
+          value: 0.2,
+          variance: 0,
+        },
+        stay_until: {
+          time: 1900,
+          variance: 30,
+        },
+      },
+    ],
+  };
+
+  const actors = generateActors(agentsTemplate, stations);
+
+  console.log(JSON.stringify(actors, null, 2));
+});
