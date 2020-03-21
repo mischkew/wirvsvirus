@@ -108,6 +108,8 @@ export function generateActors(actorTemplate, stations) {
       current_station: schedule[0],
       current_schedule: 0,
       state: WAITING,
+      path: null,
+      path_position: null,
     };
 
     return actor;
