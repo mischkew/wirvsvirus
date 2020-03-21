@@ -1,34 +1,57 @@
 {
-    "count": 100000,
-    "recovery_time": 10,
-    "infection_probability": 0.2,
-    "schedule": [
-        {
-            "station": "gen",
-            "name": "residence",
-            "probablity": 1,
-            "stay_until": {
-                "time": 800,
-                "variance": 100
+    "agents_template": {
+        "count": 100000,
+        "recovery_time": 10,
+        "infection_probability": 0.2,
+        "schedule": [
+            {
+                "station": "generate",
+                "name": "residence",
+                "probablity": {
+                    "value": 1,
+                    "variance": 0
+                },
+                "stay_until": {
+                    "time": 800,
+                    "variance": 100
+                }
+            },
+            {
+                "station": "gen",
+                "name": "work",
+                "probablity": {
+                    "value": 1,
+                    "variance": 0
+                },
+                "stay_until": {
+                    "time": 1700,
+                    "variance": 100
+                }
+            },
+            {
+                "station": "gen",
+                "name": "leisure",
+                "probablity": {
+                    "value": 0.3,
+                    "variance": 0
+                },
+                "stay_until": {
+                    "time": 2100,
+                    "variance": 100
+                }
+            },
+            {
+                "station": "gen",
+                "name": "shopping",
+                "probablity": {
+                    "value": 0.2,
+                    "variance": 0
+                },
+                "stay_until": {
+                    "time": 1900,
+                    "variance": 30 
+                }
             }
-        },
-        {
-            "station": "gen",
-            "name": "work",
-            "probablity": 1,
-            "stay_until": 1700
-        },
-        {
-            "station": "gen",
-            "name": "leisure",
-            "probablity": 0.3,
-            "stay_until": 2100
-        },
-        {
-            "station": "gen",
-            "name": "shopping",
-            "probablity": 0.2,
-            "stay_until": 1900
-        }
-    ]
+        ]
+    }
 }
