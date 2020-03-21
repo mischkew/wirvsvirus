@@ -1,24 +1,17 @@
 import React from 'react';
-import logo from './logo.svg';
+import SimulationMap from './components/SimulationMap';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <SimulationMap
+        position={{ lat: 52.52885, lng: 13.40456 }}
+        box={{
+          topLeft: { lat: 52.6, lng: 13.1 },
+          bottomRight: { lat: 52.4, lng: 13.7 },
+        }}
+      />
     </div>
   );
 }
