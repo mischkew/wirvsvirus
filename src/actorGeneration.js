@@ -41,7 +41,9 @@ export function generateScheduleEntry(template, stations) {
 export function generatePredecessorMap(start, stations) {
   let queue = [];
   let seen = new Set();
-  let predecessor = { [start]: null };
+  let predecessor = {
+    [start]: null
+  };
   seen.add(start);
   queue.push(start);
 

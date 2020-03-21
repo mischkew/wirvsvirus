@@ -45,7 +45,7 @@ def get_stations(result):
 def stations_to_dict(stations):
     d = {}
     for station in stations:
-        d[station.id] = {
+        d[str(station.id)] = {
             "type": "station",
             "next_stops": [],
             "lat": float(station.lat),
@@ -68,7 +68,7 @@ def connect_stations(stations_dict, result):
         for mem in rel.members[1:]:
             if is_station(mem):
                 mem = mem.resolve()
-                stations_dict[last.id]["next_stops"].append(mem.id)
+                stations_dict[str(last.id)]["next_stops"].append(str(mem.id))
                 last = mem
 
 
@@ -117,17 +117,18 @@ def merge_stations(stations_dict):
 
 def write_stations_dict(stations_dict):
     with open("stations.json", "w") as f:
-        json.dump({"stations": stations_dict}, f)
+        json.dump(stations_dict, f)
 
 
-def main():
+def create_subway_graph():
     res = get_subways()
     stations = get_stations(res)
     d = stations_to_dict(stations)
     connect_stations(d, res)
     d = merge_stations(d)
-    write_stations_dict(d)
+    return {"stations": d}
 
 
 if __name__ == "__main__":
-    main()
+    d = create_subway_graph()
+    write_stations_dict(d)
