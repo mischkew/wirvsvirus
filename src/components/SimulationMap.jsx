@@ -41,6 +41,7 @@ export default function SimulationMap({
   }
 
   const [simulationProgress, setSimulationProgress] = useState({
+    count: 0,
     day: 0,
     time: 0,
   });
@@ -66,7 +67,8 @@ export default function SimulationMap({
         onUpdate={setSimulationProgress}
       />
       <ProgressLayer className="simulation-progress">
-        Day: {simulationProgress.day}, Time: {simulationProgress.time}
+        Count: {simulationProgress.count}, Day: {simulationProgress.day}, Time:{' '}
+        {simulationProgress.time}
       </ProgressLayer>
     </Map>
   );

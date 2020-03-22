@@ -1,9 +1,8 @@
 import L, { Util } from 'leaflet';
 import regl from 'regl';
-import { generatePaths, generateActors } from '../actorGeneration';
-import { Simulator, WAITING, TRAVEL_TIME } from '../simulation';
-import { getPosition } from '../utils';
+import { TRAVEL_TIME } from '../simulation';
 import { TRANSPARENT_RGBA, HEALTHY_RGB } from '../branding';
+import SimulationWorker from 'workerize-loader!../simulationWorker'; // eslint-disable-line import/no-webpack-loader-syntax
 
 //
 // Leaflet Layer
@@ -18,7 +17,12 @@ L.AgentsLayer = L.Layer.extend({
 
     // a callback which is called everytime the agent loop updated, i.e. can be
     // used to display simulation progress outside of the layer via react
-    onUpdate: ({ day, time }) => {},
+    onUpdate: ({ count, day, time }) => {},
+
+    // speed of the simulation in ticks. Minimum 1. The highter the number, the
+    // faster the simulation runs. This parameter basically tells the renderer
+    // to only update every `simulationSpeed` ticks.
+    simulationSpeed: 1,
   },
 
   initialize: function(stations, options) {
@@ -34,6 +38,9 @@ L.AgentsLayer = L.Layer.extend({
     this._map = map;
     this._canvas = this._initCanvas(map);
     this._regl = this._initRegl(this._canvas);
+
+    // this is the agents buffer, which will get upated by the worker loop
+    this._agents = [];
     this._simulation = this._initSimulation();
 
     if (this.options.pane) {
@@ -89,55 +96,85 @@ L.AgentsLayer = L.Layer.extend({
   },
 
   _initSimulation: function() {
-    const actors = generateActors(this.options.simulation, this._stations);
-    const paths = generatePaths(actors, this._stations);
-    return new Simulator(this._stations, actors, paths);
+    const worker = SimulationWorker();
+
+    // fill the agents buffer so the rendering loop can access the simulation
+    // progress
+    worker.addEventListener('message', event => {
+      if (event.data && event.data.type && event.data.type === 'RPC') {
+        return;
+      }
+      // console.time('event parse');
+      this._agents = event.data;
+      // console.timeEnd('event parse');
+    });
+
+    // kill the worker when an error happened
+    worker.addEventListener('error', event => {
+      console.error(event);
+      worker.destroySimulation();
+      worker.terminate();
+    });
+
+    // launch the worker
+    worker.setupSimulation(this.options.simulation, this._stations);
+    worker.runSimulation(this.options.simulationSpeed);
+
+    return worker;
   },
 
   _render: function() {
     this._draw = this._buildDraw();
 
     this._frameLoop = this._regl.frame(() => {
-      // TODO: generate agents independ of the render loop in a worker thread to
-      // control simulation time
-      const agents = this._simulation.step();
+      let day = null;
+      let time = null;
+      if (this._agents.length === 3) {
+        day = this._agents[0];
+        time = this._agents[1];
+      }
 
       this.options.onUpdate({
-        day: this._simulation.day,
-        time: this._simulation.time,
+        day,
+        time,
+        count: this.options.simulation.count,
       });
 
       this._regl.clear({
         color: TRANSPARENT_RGBA,
       });
 
-      this._draw(agents);
+      this._draw();
     });
   },
 
   _buildDraw: function() {
-    const stationPositions = new Map(
-      Object.entries(this._stations).map(([id, station]) => [
-        id,
-        getPosition(station),
-      ])
-    );
     const mapSize = this._map.getSize();
 
-    return function draw(agents) {
+    return function draw() {
+      // console.time('render');
+      if (this._agents.length !== 3) {
+        // no agents computed yet, must have 3 element according to protocol
+        return;
+      }
+
+      // console.time('coords');
+      const [day, time, agents] = this._agents;
       const startCoordinates = agents.map(agent => {
-        const station = agent.schedule[agent.current_schedule].station;
-        return this._map.latLngToContainerPoint(stationPositions.get(station));
+        // according to protocol the latlng values of the start position are
+        // stored in field 0
+        const point = this._map.latLngToContainerPoint(agent[0]);
+        return [point.x, point.y];
       });
       const endCoordinates = agents.map(agent => {
-        const index =
-          agent.current_schedule + 1 === agent.schedule.length
-            ? 0
-            : agent.current_schedule + 1;
-        const station = agent.schedule[index].station;
-        return this._map.latLngToContainerPoint(stationPositions.get(station));
+        // according to protocol the latlng values of the end position are
+        // stored in field 1
+        const point = this._map.latLngToContainerPoint(agent[1]);
+        return [point.x, point.y];
       });
+      // console.timeEnd('coords');
 
+      // console.time('regl');
       this._regl({
         frag: `
           precision lowp float;
@@ -170,6 +207,7 @@ L.AgentsLayer = L.Layer.extend({
 
           // time progress of the simulation
           uniform float globalTime;
+          uniform float globalDay;
 
           // the amount of time it takes to go from start to end in simulation time
           uniform float travelTime;
@@ -211,9 +249,11 @@ L.AgentsLayer = L.Layer.extend({
           }
       `,
         attributes: {
-          startCoordinate: startCoordinates.map(c => [c.x, c.y]),
-          endCoordinate: endCoordinates.map(c => [c.x, c.y]),
-          isWaiting: agents.map(agent => (agent.state === WAITING ? 1.0 : 0.0)),
+          startCoordinate: startCoordinates,
+          endCoordinate: endCoordinates,
+          // according to proctol, the isWaiting flag is stored as a float in
+          // agent field 2
+          isWaiting: agents.map(agent => agent[2]),
         },
         uniforms: {
           pointWidth: 3.0,
@@ -222,11 +262,15 @@ L.AgentsLayer = L.Layer.extend({
           mapHeight: mapSize.y,
           deltaTime: this._regl.context('deltaTime'),
           travelTime: TRAVEL_TIME,
-          globalTime: this._simulation.time,
+          globalDay: day,
+          globalTime: time,
         },
         count: startCoordinates.length,
         primitive: 'points',
       })();
+      // console.timeEnd('regl');
+
+      // console.timeEnd('render');
     };
   },
 
@@ -245,6 +289,11 @@ L.AgentsLayer = L.Layer.extend({
   },
 
   _restart: function() {
+    if (this._simulation) {
+      this._simulation.destroySimulation();
+      this._simulation.terminate();
+    }
+
     this._simulation = this._initSimulation();
     this._draw = this._buildDraw();
   },
