@@ -51,10 +51,57 @@ class TimeQueue {
   }
 }
 
+export class Actor {
+  constructor({
+    status,
+    schedule,
+    current_station,
+    current_schedule,
+    state,
+    path,
+    path_position,
+  }) {
+    this.status = status;
+    this.schedule = schedule;
+    this.current_station = current_station;
+    this.current_schedule = current_schedule;
+    this.state = state;
+    this.path = path;
+    this.path_position = path_position;
+  }
+
+  advanceSchedule({ time }) {
+    // advance the schedule to the next valid position
+    // if at last entry, go back home (schedule 0)
+    if (this.current_schedule === this.schedule.length - 1) {
+      this.current_schedule = 0;
+    } else {
+      this.current_schedule += 1;
+    }
+
+    // skip any entries, which have a time in the past (cannot go there anymore)
+    while (
+      this.schedule[this.current_schedule].time < time &&
+      this.current_schedule !== 0
+    ) {
+      this.current_schedule += 1;
+      if (this.current_schedule === this.schedule.length - 1) {
+        this.current_schedule = 0;
+      }
+    }
+  }
+}
+
+function buildActors(actorsData) {
+  return actorsData.map(actorData => {
+    return new Actor(actorData);
+  });
+}
+
 export class Simulator {
-  constructor(stations, actors, predecessorMaps) {
+  constructor(stations, actorsData, predecessorMaps) {
     this.stations = stations;
-    this.actors = actors;
+    this.actors = buildActors(actorsData);
     this.predecessorMaps = predecessorMaps;
     this.time = 0;
     this.day = 0;
@@ -98,24 +145,7 @@ export class Simulator {
     // stay_until has expired, go to next entry in the schedule
     const currentStation = actor.schedule[actor.current_schedule].station;
 
-    // advance the schedule to the next valid position
-    // if at last entry, go back home (schedule 0)
-    if (actor.current_schedule === actor.schedule.length - 1) {
-      actor.current_schedule = 0;
-    } else {
-      actor.current_schedule += 1;
-    }
-
-    // skip any entries, which have a time in the past (cannot go there anymore)
-    while (
-      actor.schedule[actor.current_schedule].time < this.time &&
-      actor.current_schedule !== 0
-    ) {
-      actor.current_schedule += 1;
-      if (actor.current_schedule === actor.schedule.length - 1) {
-        actor.current_schedule = 0;
-      }
-    }
+    actor.advanceSchedule({ time: this.time });
 
     const destination = actor.schedule[actor.current_schedule].station;
     actor.path = generatePathFromPredecessorMap(
