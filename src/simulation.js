@@ -60,6 +60,7 @@ export class Actor {
     state,
     path,
     path_position,
+    sim,
   }) {
     this.status = status;
     this.schedule = schedule;
@@ -68,6 +69,48 @@ export class Actor {
     this.state = state;
     this.path = path;
     this.path_position = path_position;
+    this.sim = sim;
+  }
+
+  arriveAtNextPathStop() {
+    this.state = WAITING;
+
+    this.advancePath({
+      onNext: () => {
+        this.sim.actorWaitsForDeparture({
+          actor: this,
+          station: this.current_station,
+          destination: this.nextPathStop(),
+        });
+      },
+      onArrivedAtDestination: () => {
+        this.arriveAtScheduleLocation();
+      },
+    });
+  }
+
+  arriveAtScheduleLocation() {
+    this.sim.scheduleWait(
+      this,
+      this.schedule[this.current_schedule].stay_until
+    );
+  }
+
+  stayFinished() {
+    this.advanceSchedule({ time: this.time });
+
+    this.preparePath({
+      onAlreadyThere: () => {
+        this.arriveAtScheduleLocation();
+      },
+      onPrepared: () => {
+        this.sim.actorWaitsForDeparture({
+          actor: this,
+          station: this.current_station,
+          destination: this.nextPathStop(),
+        });
+      },
+    });
   }
 
   advanceSchedule({ time }) {
@@ -90,18 +133,54 @@ export class Actor {
       }
     }
   }
+
+  advancePath({ onNext, onArrivedAtDestination }) {
+    this.path_position += 1;
+    this.current_station = this.path[this.path_position];
+
+    if (this.path_position === this.path.length - 1) {
+      // arrived at destination
+      this.path = null;
+      this.path_position = null;
+      onArrivedAtDestination();
+    } else {
+      // go to next station in path
+      onNext();
+    }
+  }
+
+  preparePath({ onAlreadyThere, onPrepared }) {
+    const destination = this.schedule[this.current_schedule].station;
+    if (destination === this.current_station) {
+      onAlreadyThere();
+      return;
+    }
+    this.path = generatePathFromPredecessorMap(
+      this.sim.predecessorMaps[this.current_station],
+      destination
+    );
+    this.path_position = 0;
+    onPrepared();
+  }
+
+  nextPathStop() {
+    if (this.path === null || this.path_position === this.path.length - 1) {
+      return null;
+    }
+    return this.path[this.path_position + 1];
+  }
 }
 
-function buildActors(actorsData) {
+function buildActors(actorsData, sim) {
   return actorsData.map(actorData => {
-    return new Actor(actorData);
+    return new Actor({ ...actorData, sim });
   });
 }
 
 export class Simulator {
   constructor(stations, actorsData, predecessorMaps) {
     this.stations = stations;
-    this.actors = buildActors(actorsData);
+    this.actors = buildActors(actorsData, this);
     this.predecessorMaps = predecessorMaps;
     this.time = 0;
     this.day = 0;
@@ -125,7 +204,7 @@ export class Simulator {
 
   startActors() {
     this.actors.forEach(actor => {
-      this.actorScheduleWait(actor);
+      actor.arriveAtScheduleLocation();
     });
   }
 
@@ -141,44 +220,12 @@ export class Simulator {
     }
   }
 
-  actorStayFinished(actor) {
-    // stay_until has expired, go to next entry in the schedule
-    const currentStation = actor.schedule[actor.current_schedule].station;
-
-    actor.advanceSchedule({ time: this.time });
-
-    const destination = actor.schedule[actor.current_schedule].station;
-    actor.path = generatePathFromPredecessorMap(
-      this.predecessorMaps[currentStation],
-      destination
-    );
-    actor.path_position = 0;
-
-    if (actor.path.length === 1) {
-      actor.path = null;
-      actor.path_position = null;
-      this.actorScheduleWait(actor);
-    } else {
-      const nextStation = actor.path[actor.path_position + 1];
-      this.station_queues[currentStation][nextStation].push(actor);
-    }
-
-    if (this.finishStayCallback !== null) {
-      this.finishStayCallback(
-        actor,
-        currentStation,
-        destination,
-        actor.schedule[actor.current_schedule].name
-      );
-    }
+  actorWaitsForDeparture({ actor, station, destination }) {
+    this.station_queues[station][destination].push(actor);
   }
 
-  actorScheduleWait(actor) {
-    const entry = actor.schedule[actor.current_schedule];
-
-    // TODO manage infection due to stay
-
-    const time = timeToMinutes(entry.stay_until);
+  scheduleWait(actor, until) {
+    const time = timeToMinutes(until);
     const queueItem = {
       item: actor,
       day: this.day + (time <= this.time),
@@ -188,28 +235,6 @@ export class Simulator {
 
     if (this.waitCallback !== null) {
       this.waitCallback(actor, queueItem.day, queueItem.time);
-    }
-  }
-
-  actorArrivedAtStation(actor) {
-    actor.path_position += 1;
-    actor.current_station = actor.path[actor.path_position];
-    actor.state = WAITING;
-
-    if (actor.path_position === actor.path.length - 1) {
-      // actor arrived at destination
-      actor.path = null;
-      actor.path_position = null;
-      this.actorScheduleWait(actor);
-    } else {
-      // go to next station in path
-      const currentStation = actor.path[actor.path_position];
-      const nextStation = actor.path[actor.path_position + 1];
-      this.station_queues[currentStation][nextStation].push(actor);
-    }
-
-    if (this.arrivalCallback !== null) {
-      this.arrivalCallback(actor);
     }
   }
 
@@ -240,12 +265,23 @@ export class Simulator {
     this.stepTime();
 
     this.idle_queue.dequeueExpired(this.day, this.time, actor => {
-      this.actorStayFinished(actor);
+      actor.stayFinished();
+      if (this.finishStayCallback !== null) {
+        this.finishStayCallback(
+          actor,
+          actor.current_station,
+          actor.nextPathStop(),
+          actor.schedule[actor.current_schedule].name
+        );
+      }
     });
 
     this.travel_queue.dequeueExpired(this.day, this.time, arrivedActors => {
       arrivedActors.forEach(actor => {
-        this.actorArrivedAtStation(actor);
+        actor.arriveAtNextPathStop();
+        if (this.arrivalCallback !== null) {
+          this.arrivalCallback(actor);
+        }
       });
     });
 
