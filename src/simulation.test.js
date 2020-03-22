@@ -75,8 +75,8 @@ describe('Simulator', () => {
   });
 
   it('should finish an actors stay', () => {
-    const actor = actors[0];
     let sim = new Simulator(testStations, actors, testMaps);
+    let actor = sim.actors[0];
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -86,8 +86,8 @@ describe('Simulator', () => {
   });
 
   it('should make an actor travel', () => {
-    const actor = actors[0];
     let sim = new Simulator(testStations, actors, testMaps);
+    let actor = sim.actors[0];
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -100,8 +100,8 @@ describe('Simulator', () => {
   });
 
   it('should make an actor arrive', () => {
-    const actor = actors[0];
     let sim = new Simulator(testStations, actors, testMaps);
+    let actor = sim.actors[0];
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -116,8 +116,8 @@ describe('Simulator', () => {
   });
 
   it('should do a full tour for all actors', () => {
-    const actor = actors[0];
     let sim = new Simulator(testStations, actors, testMaps);
+    let actor = sim.actors[0];
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
