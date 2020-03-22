@@ -25,6 +25,7 @@ export function setupSimulation(simulationOptions, stations) {
   actors = generateActors(simulationOptions, stations);
   allPaths = generatePaths(actors, stations);
   simulator = new Simulator(stations, actors, allPaths);
+  simulator.startActors();
 
   stationPositions = new Map(
     Object.entries(stations).map(([id, station]) => [
@@ -92,20 +93,20 @@ export function runSimulation(updateInterval) {
       requestAnimationFrame(loop);
     }
 
-    console.time('sim');
+    // console.time('sim');
     const agents = simulator.step();
-    console.timeEnd('sim');
+    // console.timeEnd('sim');
 
     ticks++;
 
     if (ticks >= updateInterval) {
       ticks = 0;
-      console.time('encode');
+      // console.time('encode');
       const e = encodeAgents(agents);
-      console.timeEnd('encode');
-      console.time('post');
+      // console.timeEnd('encode');
+      // console.time('post');
       postMessage(e);
-      console.timeEnd('post');
+      // console.timeEnd('post');
     }
   }
 
