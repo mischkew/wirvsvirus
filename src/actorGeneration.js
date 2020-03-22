@@ -41,9 +41,13 @@ export function generateScheduleEntry(template, stations) {
 export function generateActors(actorTemplate, stations) {
   const station_names = Object.keys(stations);
   const actors = Array.from(Array(actorTemplate.count).keys()).map(index => {
-    const schedule = actorTemplate.schedule.map(scheduleTemplate =>
-      generateScheduleEntry(scheduleTemplate, station_names)
-    );
+    const schedule = actorTemplate.schedule.reduce((acc, scheduleTemplate) => {
+      const entry = generateScheduleEntry(scheduleTemplate, station_names);
+      if (Math.random() < entry.probability) {
+        acc.push(entry);
+      }
+      return acc;
+    }, []);
     let actor = {
       status: HEALTHY,
       schedule,

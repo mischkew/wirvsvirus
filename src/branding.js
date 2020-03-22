@@ -8,7 +8,7 @@ export const BLUE_LIGHTER = '#cae8d5';
 
 // Color Palette: https://colorhunt.co/palette/177314
 export const HEALTHY_RGB = [0, 255, 0]; // [43, 88, 12];
-export const INFECTED_RGB = [255, 255, 0];
+export const INFECTED_RGB = [255, 0, 0];
 
 // Color Palette: https://colorhunt.co/palette/176667
 export const RECOVERED = '#be79df';
