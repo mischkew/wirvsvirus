@@ -93,3 +93,46 @@ export const testAgentsTemplate = {
     },
   ],
 };
+
+// no evening / nighttime activities
+// 25% of people work
+export const quarantineTemplate = {
+  count: 1000,
+  recovery_time: 10,
+  infection_probability: 0.2,
+  schedule: [
+    {
+      name: 'residence',
+      probability: {
+        value: 1,
+        variance: 0,
+      },
+      stay_until: {
+        time: 800,
+        variance: 300,
+      },
+    },
+    {
+      name: 'work',
+      probability: {
+        value: 0.25,
+        variance: 0,
+      },
+      stay_until: {
+        time: 1500,
+        variance: 300,
+      },
+    },
+    {
+      name: 'groceries',
+      probability: {
+        value: 0.3,
+        variance: 0,
+      },
+      stay_until: {
+        time: 1900,
+        variance: 200,
+      },
+    },
+  ],
+};
