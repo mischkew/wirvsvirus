@@ -8,7 +8,7 @@ export const BLUE_LIGHTER = '#cae8d5';
 
 // Color Palette: https://colorhunt.co/palette/177314
 export const HEALTHY = '#2b580c';
-export const HEALTHY_RGB = [43, 88, 12];
+export const HEALTHY_RGB = [0, 255, 0]; // [43, 88, 12];
 export const INFECTED = '#f19292';
 
 // Color Palette: https://colorhunt.co/palette/176667
