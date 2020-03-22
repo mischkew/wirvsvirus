@@ -10,7 +10,11 @@ import { testStations, testAgentsTemplate } from './testUtils';
 import { HEALTHY, INFECTED, generateActors } from './actorGeneration';
 import { getLargestCC, generatePredecessorMaps } from './pathGeneration';
 
-import { convertStationsToString, selectStationsOnly } from './dataProcessing';
+import {
+  convertStationsToString,
+  selectStationsOnly,
+  addActorNames,
+} from './dataProcessing';
 
 import berlinStationData from './assets/stations.json';
 
@@ -148,50 +152,63 @@ function minutesToTime(min) {
 }
 
 describe('CLI Simulation', () => {
-  function simulate(stations, actors, predecessorMaps) {
+  function simulate(
+    stations,
+    actors,
+    predecessorMaps,
+    { logging } = { logging: false }
+  ) {
     actors[0].status = INFECTED;
 
-    // actors.forEach(actor => {
-    //   console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
-    //   console.log(actor.schedule);
-    // });
-
     let sim = new Simulator(stations, actors, predecessorMaps);
+    actors = sim.actors;
 
-    function onArrival(actor) {
-      console.log(
-        `${minutesToTime(sim.time)}: Actor ${actor.name} arrived at ${
-          actor.current_station
-        }`
-      );
+    if (logging) {
+      addActorNames(actors);
+
+      actors.forEach(actor => {
+        console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
+        // console.log(actor.schedule);
+      });
+
+      function onArrival(actor) {
+        console.log(
+          `${minutesToTime(sim.time)}: Actor ${actor.name} arrived at ${
+            actor.current_station
+          }`
+        );
+      }
+
+      function onLeave(actor, station, destination, name) {
+        console.log(
+          `${minutesToTime(sim.time)}: Actor ${
+            actor.name
+          } leaves ${station}, travels to ${destination}, purpose ${name}`
+        );
+      }
+
+      function onWait(actor, day, time) {
+        console.log(
+          `${minutesToTime(sim.time)}: Actor ${actor.name} waits at ${
+            actor.current_station
+          } until Day ${day}, Hours ${minutesToTime(time)}`
+        );
+      }
+
+      sim.finishStayCallback = onLeave;
+      sim.arrivalCallback = onArrival;
+      sim.waitCallback = onWait;
     }
 
-    function onLeave(actor, station, destination, name) {
-      console.log(
-        `${minutesToTime(sim.time)}: Actor ${
-          actor.name
-        } leaves ${station}, travels to ${destination}, purpose ${name}`
-      );
-    }
-
-    function onWait(actor, day, time) {
-      console.log(
-        `${minutesToTime(sim.time)}: Actor ${actor.name} waits at ${
-          actor.current_station
-        } until Day ${day}, Hours ${minutesToTime(time)}`
-      );
-    }
-
-    // sim.finishStayCallback = onLeave;
-    // sim.arrivalCallback = onArrival;
-    // sim.waitCallback = onWait;
     sim.startActors();
 
     const startTime = Date.now();
     const sim_days = 1;
     for (let day = 0; day < sim_days; ++day) {
-      // console.log(`Day ${day}`);
-      // console.log(`Sim: ${sim.day} ${sim.time}`);
+      if (logging) {
+        console.log(`Day ${day}`);
+        console.log(`Sim: ${sim.day} ${sim.time}`);
+      }
       for (let minute = 0; minute < MINUTES_PER_DAY; ++minute) {
         if (minute === timeToMinutes(2002)) {
           let dummy;
@@ -212,6 +229,7 @@ describe('CLI Simulation', () => {
   }
 
   it('runs with example data', () => {
+    testAgentsTemplate.count = 4;
     let actors = generateActors(testAgentsTemplate, testStations).map(
       (actor, index) => {
         actor.name = index;
@@ -221,7 +239,7 @@ describe('CLI Simulation', () => {
 
     const predecessorMaps = generatePredecessorMaps(testStations);
 
-    simulate(testStations, actors, predecessorMaps);
+    simulate(testStations, actors, predecessorMaps, { logging: true });
   });
 
   it('runs with real data', () => {
@@ -240,7 +258,9 @@ describe('CLI Simulation', () => {
     }, new Set());
 
     expect(all_next_stops.size).toBe(Object.keys(cc).length);
-    console.log(Object.keys(cc).length);
+    // console.log(Object.keys(cc).length);
+
+    testAgentsTemplate.count = 1000;
 
     let actors = generateActors(testAgentsTemplate, cc).map((actor, index) => {
       actor.name = index;

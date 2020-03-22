@@ -27,6 +27,12 @@ export function selectStationsOnly(locations) {
   );
 }
 
+export function addActorNames(actors) {
+  actors.forEach((actor, index) => {
+    actor.name = index;
+  });
+}
+
 /*
     be careful with this one
     Object.keys will output strings and not numbers
