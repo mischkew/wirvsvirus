@@ -1,7 +1,7 @@
 import L, { Util } from 'leaflet';
 import regl from 'regl';
 import { generatePaths, generateActors } from '../actorGeneration';
-import { Simulator, WAITING } from '../simulation';
+import { Simulator, WAITING, TRAVEL_TIME } from '../simulation';
 import { getPosition } from '../utils';
 import { TRANSPARENT_RGBA, HEALTHY_RGB } from '../branding';
 
@@ -171,16 +171,22 @@ L.AgentsLayer = L.Layer.extend({
           // time progress of the simulation
           uniform float globalTime;
 
+          // the amount of time it takes to go from start to end in simulation time
+          uniform float travelTime;
+
           varying vec3 frag_color;
 
           // We assume that each start and end position is equi-distanced in the
           // graph and takes the same amount of time for each agent to reach.
-          // Every trafficInterval ticks an agent can travel frome one station
+          // Every trafficInterval ticks, an agent can travel from one station
           // to the next, which in turn takes trafficInterval ticks. Based on
           // these assumption we can render the position of the agents on the
           // route.
           vec2 positionOnRoute() {
-            return startCoordinate;
+            float remainder = mod(globalTime, travelTime);
+            float travelProgressFactor = remainder / travelTime;
+
+            return startCoordinate + travelProgressFactor * (endCoordinate - startCoordinate);
           }
 
           // helper function to transform from pixel space to normalized device
@@ -215,6 +221,7 @@ L.AgentsLayer = L.Layer.extend({
           mapWidth: mapSize.x,
           mapHeight: mapSize.y,
           deltaTime: this._regl.context('deltaTime'),
+          travelTime: TRAVEL_TIME,
           globalTime: this._simulation.time,
         },
         count: startCoordinates.length,
