@@ -90,14 +90,27 @@ export class Actor {
   }
 
   arriveAtScheduleLocation() {
+    if (this.currentScheduleExpired()) {
+      this.advanceSchedule();
+    }
     this.sim.scheduleWait(
       this,
       this.schedule[this.current_schedule].stay_until
     );
   }
 
+  currentScheduleExpired() {
+    // check if the current schedule entry's stay_until is in the past
+    // the first entry (residence) can never expire
+    // meaning the actor will always wait at home if nothing else is left on the schedule
+    return (
+      this.current_schedule !== 0 &&
+      this.schedule[this.current_schedule].time < this.sim.time
+    );
+  }
+
   stayFinished() {
-    this.advanceSchedule({ time: this.time });
+    this.advanceSchedule();
 
     this.preparePath({
       onAlreadyThere: () => {
@@ -113,24 +126,22 @@ export class Actor {
     });
   }
 
-  advanceSchedule({ time }) {
-    // advance the schedule to the next valid position
-    // if at last entry, go back home (schedule 0)
+  _cycleSchedule() {
     if (this.current_schedule === this.schedule.length - 1) {
       this.current_schedule = 0;
     } else {
       this.current_schedule += 1;
     }
+  }
+
+  advanceSchedule() {
+    // advance the schedule to the next valid position
+    // if at last entry, go back home (schedule 0)
+    this._cycleSchedule();
 
     // skip any entries, which have a time in the past (cannot go there anymore)
-    while (
-      this.schedule[this.current_schedule].time < time &&
-      this.current_schedule !== 0
-    ) {
-      this.current_schedule += 1;
-      if (this.current_schedule === this.schedule.length - 1) {
-        this.current_schedule = 0;
-      }
+    while (this.currentScheduleExpired()) {
+      this._cycleSchedule();
     }
   }
 
@@ -197,9 +208,9 @@ export class Simulator {
       })
     );
 
-    this.arrivalCallback = null;
-    this.finishStayCallback = null;
-    this.waitCallback = null;
+    this.arrivalCallback = () => {};
+    this.finishStayCallback = () => {};
+    this.waitCallback = () => {};
   }
 
   startActors() {
@@ -233,9 +244,7 @@ export class Simulator {
     };
     this.idle_queue.enqueue(queueItem);
 
-    if (this.waitCallback !== null) {
-      this.waitCallback(actor, queueItem.day, queueItem.time);
-    }
+    this.waitCallback(actor, queueItem.day, queueItem.time);
   }
 
   handleInfectionTrigger(actors) {
@@ -266,22 +275,18 @@ export class Simulator {
 
     this.idle_queue.dequeueExpired(this.day, this.time, actor => {
       actor.stayFinished();
-      if (this.finishStayCallback !== null) {
-        this.finishStayCallback(
-          actor,
-          actor.current_station,
-          actor.nextPathStop(),
-          actor.schedule[actor.current_schedule].name
-        );
-      }
+      this.finishStayCallback(
+        actor,
+        actor.current_station,
+        actor.nextPathStop(),
+        actor.schedule[actor.current_schedule].name
+      );
     });
 
     this.travel_queue.dequeueExpired(this.day, this.time, arrivedActors => {
       arrivedActors.forEach(actor => {
         actor.arriveAtNextPathStop();
-        if (this.arrivalCallback !== null) {
-          this.arrivalCallback(actor);
-        }
+        this.arrivalCallback(actor);
       });
     });
 
