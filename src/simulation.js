@@ -1,12 +1,14 @@
 import PriorityQueue from 'js-priority-queue';
 import { generatePathFromPredecessorMap } from './pathGeneration';
-import { INFECTED } from './actorGeneration';
+import { INFECTED, RECOVERED, HEALTHY } from './actorGeneration';
 
 const logging = false;
 export const WAITING = 0;
 export const TRANSITIONING = 1;
 export const TRAVEL_TIME = 10;
+export const TICKS_PER_MINUTE = 1;
 export const INFECTION_SPEED = 0.5;
+export const RECOVERY_TIME = 2; // days
 
 export const MINUTES_PER_DAY = 24 * 60;
 
@@ -184,6 +186,10 @@ export class Actor {
     }
     return this.path[this.path_position + 1];
   }
+
+  tryInfect(chance) {
+    return this.status === HEALTHY && chance > Math.random();
+  }
 }
 
 function buildActors(actorsData, sim) {
@@ -201,6 +207,7 @@ export class Simulator {
     this.day = 0;
     this.travel_queue = new TimeQueue();
     this.idle_queue = new TimeQueue();
+    this.recover_queue = new TimeQueue();
     this.station_queues = Object.fromEntries(
       Object.entries(stations).map(([key, station]) => {
         const next_stops = Object.fromEntries(
@@ -211,6 +218,7 @@ export class Simulator {
         return [key, next_stops];
       })
     );
+    this.tick = 0;
 
     this.arrivalCallback = () => {};
     this.finishStayCallback = () => {};
@@ -228,11 +236,18 @@ export class Simulator {
   }
 
   stepTime() {
-    this.time = this.time + 1;
+    this.tick = this.tick + 1;
+    let ticked = false;
+    if (this.tick >= TICKS_PER_MINUTE) {
+      this.time = this.time + 1;
+      this.tick = 0;
+      ticked = true;
+    }
     if (this.time === MINUTES_PER_DAY) {
       this.time = 0;
       this.onNextDay();
     }
+    return ticked;
   }
 
   actorWaitsForDeparture({ actor, station, destination }) {
@@ -249,6 +264,15 @@ export class Simulator {
     this.idle_queue.enqueue(queueItem);
 
     this.waitCallback(actor, queueItem.day, queueItem.time);
+  }
+
+  infect(actor) {
+    actor.status = INFECTED;
+    this.recover_queue.enqueue({
+      item: actor,
+      day: this.day + RECOVERY_TIME,
+      time: this.time,
+    });
   }
 
   handleInfectionTrigger(actors) {
@@ -268,14 +292,17 @@ export class Simulator {
     }
 
     actors.forEach(actor => {
-      if (infection_chance > Math.random()) {
-        actor.status = INFECTED;
+      if (actor.tryInfect(infection_chance)) {
+        this.infect(actor);
       }
     });
   }
 
   step() {
-    this.stepTime();
+    const ticked = this.stepTime();
+    if (!ticked) {
+      return this.actors;
+    }
 
     this.idle_queue.dequeueExpired(this.day, this.time, actor => {
       actor.stayFinished();
@@ -292,6 +319,10 @@ export class Simulator {
         actor.arriveAtNextPathStop();
         this.arrivalCallback(actor);
       });
+    });
+
+    this.recover_queue.dequeueExpired(this.day, this.time, healedActor => {
+      healedActor.status = RECOVERED;
     });
 
     if (this.time % TRAVEL_TIME === 0) {
