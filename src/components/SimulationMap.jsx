@@ -62,6 +62,7 @@ export default function SimulationMap({
     day: 0,
     time: 0,
     infectedCount: 0,
+    recoveredCount: 0,
   });
 
   return (
@@ -88,11 +89,12 @@ export default function SimulationMap({
         <div>
           <span>
             Infected: {simulationProgress.infectedCount} of{' '}
-            {simulationProgress.count}
+            {simulationProgress.count - simulationProgress.recoveredCount}
           </span>
           <span>
             Day: {simulationProgress.day} ({toHours(simulationProgress.time)})
           </span>
+          <span>Recovered: {simulationProgress.recoveredCount}</span>
         </div>
       </ProgressLayer>
     </Map>
