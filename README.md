@@ -1,5 +1,11 @@
 # Wir vs Virus
 
+Hackathon Submission with presentation ([video](https://www.youtube.com/watch?v=g42bADe0gMk&feature=youtu.be)) and [DevPost page](https://devpost.com/software/project-corona-sim).
+
+![](sim.gif)
+
+A city-based epidemic simulation coded in 24h. Using real open-street-maps data to create a simulation environment, simulating daily life by spawning agents at home, home, shopping or leisure places on a SIR basis. Rendered with Leaflet and WebGL shaders.
+
 ## Requirements
 
 - NodeJS
