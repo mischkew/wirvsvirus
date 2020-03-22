@@ -4,7 +4,7 @@ import { INFECTED } from './actorGeneration';
 const logging = false;
 export const WAITING = 0;
 export const TRANSITIONING = 1;
-export const TRAVEL_TIME = 10;
+export const TRAVEL_TIME = 100;
 export const INFECTION_SPEED = 0.1;
 
 export const MINUTES_PER_DAY = 24 * 60;
