@@ -222,7 +222,12 @@ L.AgentsLayer = L.Layer.extend({
           // route.
           vec2 positionOnRoute() {
             float remainder = mod(globalTime, travelTime);
-            float travelProgressFactor = remainder / travelTime;
+            float travelProgressFactor = 0.0;
+
+            // we are not waiting, so interpolate the point between start and end
+            if (isWaiting < 0.5) {
+              travelProgressFactor = remainder / travelTime;
+            }
 
             return startCoordinate + travelProgressFactor * (endCoordinate - startCoordinate);
           }

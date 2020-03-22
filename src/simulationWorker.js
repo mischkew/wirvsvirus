@@ -1,5 +1,5 @@
 import { generatePaths, generateActors } from './actorGeneration';
-import { Simulator, WAITING } from './simulation';
+import { Simulator, WAITING, TRANSITIONING } from './simulation';
 import { HEALTHY } from './actorGeneration';
 
 let actors = null;
@@ -42,6 +42,8 @@ export function setupSimulation(simulationOptions, stations) {
  * @returns {string} Stringified payload
  */
 function encodeAgents(agents) {
+  // console.log(agents[0].schedule);
+
   function encodeAgent(agent) {
     // In order to render a single agent we need:
     // - it's current start path and target path
@@ -51,13 +53,28 @@ function encodeAgents(agents) {
     // We compute coordinates as tuples to be able to pass them to `regl`
     // directly
 
-    // TODO: use path positions!
-    const index =
-      agent.current_schedule + 1 === agent.schedule.length
-        ? 0
-        : agent.current_schedule + 1;
-    const currentStation = agent.schedule[agent.current_schedule].station;
-    const nextStation = agent.schedule[index].station;
+    let currentStation = null;
+    let nextStation = null;
+    if (agent.state === TRANSITIONING) {
+      currentStation = agent.path[agent.path_position];
+      nextStation = agent.path[agent.path_position + 1]; // cannot overflow, due to TRANSITIONING check
+    } else {
+      currentStation = agent.current_station;
+      nextStation = currentStation; // irrelevant in that case as we are not transitioning
+    }
+
+    // console.log(
+    //   'is transitioning',
+    //   JSON.stringify(agent.state === TRANSITIONING)
+    // );
+    // console.log('path position', JSON.stringify(agent.path_position));
+    // console.log('path', JSON.stringify(agent.path));
+    // console.log(
+    //   'current schedule',
+    //   JSON.stringify(agent.schedule[agent.current_schedule])
+    // );
+    // console.log('current station', currentStation);
+    // console.log('next station', nextStation);
 
     return [
       stationPositions.get(currentStation),

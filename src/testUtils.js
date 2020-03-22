@@ -14,25 +14,25 @@ export const testStations = {
   BHF_GRIEBNITZSEE: {
     name: 'Griebnitzsee',
     lat: 52.5,
-    lng: 13.4,
+    lng: 13.43,
     next_stops: ['BHF_CHARLOTTENBURG'],
   },
   BHF_FRIEDRICHSTRASSE: {
     name: 'Friedrichstrasse',
     lat: 52.51,
-    lng: 13.4,
+    lng: 13.39,
     next_stops: ['BHF_CHARLOTTENBURG', 'BHF_TEGEL', 'BHF_SUDKREUZ'],
   },
   BHF_CHARLOTTENBURG: {
     name: 'Charlottenburg',
     lat: 52.454,
-    lng: 13.4,
+    lng: 13.45,
     next_stops: ['BHF_FRIEDRICHSTRASSE', 'BHF_GRIEBNITZSEE'],
   },
 };
 
 export const testAgentsTemplate = {
-  count: 100,
+  count: 1,
   recovery_time: 10,
   infection_probability: 0.2,
   schedule: [
@@ -61,7 +61,7 @@ export const testAgentsTemplate = {
     {
       name: 'leisure',
       probability: {
-        value: 0.3,
+        value: 0.0,
         variance: 0.1,
       },
       stay_until: {
