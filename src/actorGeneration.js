@@ -27,8 +27,8 @@ export function generateScheduleEntry(template, stations) {
   entry.station = selectRandom(stations);
   entry.name = template.name; // probably not needed
   entry.probability = sampleRange(
-    template.probability.value,
-    template.probability.variance
+    template.dailyProbability.value,
+    template.dailyProbability.variance
   );
 
   entry.stay_until = Math.floor(
@@ -43,7 +43,7 @@ export function generateActors(actorTemplate, stations) {
   const actors = Array.from(Array(actorTemplate.count).keys()).map(index => {
     const schedule = actorTemplate.schedule.reduce((acc, scheduleTemplate) => {
       const entry = generateScheduleEntry(scheduleTemplate, station_names);
-      if (Math.random() < entry.probability) {
+      if (Math.random() < entry.partOfScheduleProbability) {
         acc.push(entry);
       }
       return acc;
