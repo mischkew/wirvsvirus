@@ -32,7 +32,7 @@ export const testStations = {
 };
 
 export const testAgentsTemplate = {
-  count: 100,
+  count: 1000,
   recovery_time: 10,
   infection_probability: 0.2,
   schedule: [
@@ -44,7 +44,7 @@ export const testAgentsTemplate = {
       },
       stay_until: {
         time: 800,
-        variance: 100,
+        variance: 300,
       },
     },
     {
@@ -54,19 +54,41 @@ export const testAgentsTemplate = {
         variance: 0,
       },
       stay_until: {
-        time: 1700,
-        variance: 100,
+        time: 1500,
+        variance: 300,
       },
     },
     {
-      name: 'leisure',
+      name: 'groceries',
       probability: {
-        value: 0.2,
+        value: 0.3,
         variance: 0,
       },
       stay_until: {
         time: 1900,
         variance: 200,
+      },
+    },
+    {
+      name: 'evening',
+      probability: {
+        value: 0.1,
+        variance: 0,
+      },
+      stay_until: {
+        time: 2200,
+        variance: 150,
+      },
+    },
+    {
+      name: 'night',
+      probability: {
+        value: 0.05,
+        variance: 0,
+      },
+      stay_until: {
+        time: 200,
+        variance: 100,
       },
     },
   ],
