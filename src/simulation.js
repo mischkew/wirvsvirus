@@ -5,7 +5,7 @@ const logging = false;
 export const WAITING = 0;
 export const TRANSITIONING = 1;
 export const TRAVEL_TIME = 10;
-export const INFECTION_CHANCE = 1;
+export const INFECTION_SPEED = 0.1;
 
 export const MINUTES_PER_DAY = 24 * 60;
 
@@ -161,7 +161,7 @@ export class Simulator {
       return acc + (actor.status === INFECTED ? 1 : 0);
     }, 0);
 
-    let infection_chance = infected * INFECTION_CHANCE;
+    let infection_chance = (infected / actors.length) * INFECTION_SPEED;
     if (infection_chance > 1) {
       infection_chance = 1;
     }
