@@ -7,13 +7,10 @@ import {
   MINUTES_PER_DAY,
 } from './simulation';
 import { testStations, testAgentsTemplate } from './testUtils';
-import {
-  HEALTHY,
-  INFECTED,
-  generateActors,
-  generatePaths,
-  getLargestCC,
-} from './actorGeneration';
+import { HEALTHY, INFECTED, generateActors } from './actorGeneration';
+import { getLargestCC, generatePredecessorMaps } from './pathGeneration';
+
+import { convertStationsToString, selectStationsOnly } from './dataProcessing';
 
 import berlinStationData from './assets/stations.json';
 
@@ -54,32 +51,32 @@ function buildActors() {
     },
   ];
 }
-let actors = buildActors();
-const paths = generatePaths(actors, testStations);
 
 describe('Simulator', () => {
+  let actors, testMaps;
   beforeEach(() => {
     actors = buildActors();
+    testMaps = generatePredecessorMaps(testStations);
   });
 
   it('should construct', () => {
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
   });
 
   it('should start actors', () => {
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
     sim.startActors();
   });
 
   it('should simulate a step', () => {
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
     sim.startActors();
     sim.step();
   });
 
   it('should finish an actors stay', () => {
     const actor = actors[0];
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -90,7 +87,7 @@ describe('Simulator', () => {
 
   it('should make an actor travel', () => {
     const actor = actors[0];
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -104,7 +101,7 @@ describe('Simulator', () => {
 
   it('should make an actor arrive', () => {
     const actor = actors[0];
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -120,7 +117,7 @@ describe('Simulator', () => {
 
   it('should do a full tour for all actors', () => {
     const actor = actors[0];
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(testStations, actors, testMaps);
     sim.startActors();
     sim.time = timeToMinutes(859);
     sim.step();
@@ -151,7 +148,7 @@ function minutesToTime(min) {
 }
 
 describe('CLI Simulation', () => {
-  function simulate(stations, actors, paths) {
+  function simulate(stations, actors, predecessorMaps) {
     actors[0].status = INFECTED;
 
     // actors.forEach(actor => {
@@ -159,7 +156,7 @@ describe('CLI Simulation', () => {
     //   console.log(actor.schedule);
     // });
 
-    let sim = new Simulator(stations, actors, paths);
+    let sim = new Simulator(stations, actors, predecessorMaps);
 
     function onArrival(actor) {
       console.log(
@@ -222,35 +219,35 @@ describe('CLI Simulation', () => {
       }
     );
 
-    const paths = generatePaths(actors, testStations);
+    const predecessorMaps = generatePredecessorMaps(testStations);
 
-    simulate(testStations, actors, paths);
+    simulate(testStations, actors, predecessorMaps);
   });
 
-  it('runs with real data', () => {
-    const berlinStations = Object.fromEntries(
-      Object.entries(berlinStationData['stations']).map(([key, value]) => {
-        const next_stops = value.next_stops.map(stop => {
-          return stop + '';
-        });
-        return [key + '', { ...value, next_stops }];
-      })
+  it.only('runs with real data', () => {
+    // convert to string
+    const berlinStations = convertStationsToString(
+      selectStationsOnly(berlinStationData['stations'])
     );
+    // U55 is not connected to rest of network
     const cc = getLargestCC(berlinStations);
 
+    // check that component is self-contained
+    // e.g. does not have edges that go outside the component
     const all_next_stops = Object.entries(cc).reduce((acc, [key, value]) => {
       value.next_stops.forEach(stop => acc.add(stop));
       return acc;
     }, new Set());
 
     expect(all_next_stops.size).toBe(Object.keys(cc).length);
+    console.log(Object.keys(cc).length);
 
     let actors = generateActors(testAgentsTemplate, cc).map((actor, index) => {
       actor.name = index;
       return actor;
     });
-    const paths = generatePaths(actors, cc);
+    const maps = generatePredecessorMaps(cc);
 
-    simulate(berlinStations, actors, paths);
+    simulate(berlinStations, actors, maps);
   });
 });
