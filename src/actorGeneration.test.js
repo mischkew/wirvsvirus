@@ -14,10 +14,11 @@ describe('generateStation', () => {
   it('generates a station according to a template', () => {
     const template = {
       name: 'leisure',
-      probability: {
+      dailyProbability: {
         value: 0.5,
         variance: 0.1,
       },
+      partOfScheduleProbability: 1,
       stay_until: {
         time: 2100,
         variance: 100,
@@ -38,10 +39,10 @@ describe('generateStation', () => {
     expect(stations).toContain(entry.station);
     expect(entry.name).toBe(expectedEntry.name);
     expect(entry.probability).toBeLessThan(
-      template.probability.value + template.probability.variance
+      template.dailyProbability.value + template.dailyProbability.variance
     );
     expect(entry.probability).toBeGreaterThan(
-      template.probability.value - template.probability.variance
+      template.dailyProbability.value - template.dailyProbability.variance
     );
   });
 });
@@ -69,10 +70,11 @@ describe('generateActors', () => {
     schedule: [
       {
         name: 'residence',
-        probability: {
+        dailyProbability: {
           value: 1,
           variance: 0,
         },
+        partOfScheduleProbability: 1,
         stay_until: {
           time: 800,
           variance: 100,
@@ -80,10 +82,11 @@ describe('generateActors', () => {
       },
       {
         name: 'work',
-        probability: {
+        dailyProbability: {
           value: 1,
           variance: 0,
         },
+        partOfScheduleProbability: 1,
         stay_until: {
           time: 1700,
           variance: 100,
@@ -91,10 +94,11 @@ describe('generateActors', () => {
       },
       {
         name: 'leisure',
-        probability: {
+        dailyProbability: {
           value: 0.3,
           variance: 0.1,
         },
+        partOfScheduleProbability: 1,
         stay_until: {
           time: 2100,
           variance: 100,
@@ -102,10 +106,11 @@ describe('generateActors', () => {
       },
       {
         name: 'shopping',
-        probability: {
+        dailyProbability: {
           value: 0.2,
           variance: 0.1,
         },
+        partOfScheduleProbability: 1,
         stay_until: {
           time: 1900,
           variance: 30,

@@ -43,7 +43,7 @@ export function generateActors(actorTemplate, stations) {
   const actors = Array.from(Array(actorTemplate.count).keys()).map(index => {
     const schedule = actorTemplate.schedule.reduce((acc, scheduleTemplate) => {
       const entry = generateScheduleEntry(scheduleTemplate, station_names);
-      if (Math.random() < entry.partOfScheduleProbability) {
+      if (Math.random() < scheduleTemplate.partOfScheduleProbability) {
         acc.push(entry);
       }
       return acc;
