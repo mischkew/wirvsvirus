@@ -48,13 +48,14 @@ def check_graph(stations):
     assert set(next_stations) == set(stations)
 
 
-def create_complete_graph():
+def create_complete_graph(with_streets=True):
     g = create_subway_graph()
     g = take_largest_component(g)
     g = {"stations": check_bbox(g["stations"])}
-    g = process_stations(g)
-    g = {"stations": check_bbox(g["stations"])}
-    g = take_largest_component(g)
+    if with_streets:
+        g = process_stations(g)
+        g = {"stations": check_bbox(g["stations"])}
+        g = take_largest_component(g)
     ensure_birected(g["stations"])
     g = {"stations": clean_graph(g["stations"])}
     check_graph(g["stations"])
@@ -63,5 +64,5 @@ def create_complete_graph():
 
 if __name__ == "__main__":
     g = create_complete_graph()
-    with open("stations-large.json", "w") as f:
+    with open("stations.json", "w") as f:
         json.dump(g, f, indent=4)
