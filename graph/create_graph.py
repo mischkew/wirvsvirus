@@ -5,7 +5,7 @@ from connected_components import take_largest_component
 from street_graph import process_stations
 
 
-BBOX = (52.4, 13.1, 52.6, 13.7)
+BBOX = (52.460666,13.270465,52.544053,13.515083)
 
 
 def in_bbox(station):
@@ -55,6 +55,7 @@ def create_complete_graph(with_streets=True):
     if with_streets:
         g = process_stations(g)
         g = {"stations": check_bbox(g["stations"])}
+        ensure_birected(g["stations"])
         g = take_largest_component(g)
     ensure_birected(g["stations"])
     g = {"stations": clean_graph(g["stations"])}
@@ -63,6 +64,6 @@ def create_complete_graph(with_streets=True):
 
 
 if __name__ == "__main__":
-    g = create_complete_graph()
-    with open("stations.json", "w") as f:
+    g = create_complete_graph(with_streets=True)
+    with open("stations-withstreets.json", "w") as f:
         json.dump(g, f, indent=4)

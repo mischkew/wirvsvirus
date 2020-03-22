@@ -27,44 +27,43 @@ def get_neighbourhood(graph):
     lngs = [float(x) for _, x in graph.nodes(data="x")]
     return zip(lats, lngs)
 
-def prune_nodes(central_node,nodes, adj_list,lat_n_longs,n_paths=2, max_hops=3):
+
+def prune_nodes(central_node, nodes, adj_list, lat_n_longs, n_paths=2,
+                max_hops=3):
     start = central_node
     nodes_on_paths = []
-    
+
     for i in range(n_paths):
-        current_paths=[]
+        current_paths = []
         hop = 0
-        hops = max_hops
         current_node = start
         start_index = nodes.index(start)
-        
-        print(list(adj_list[start_index][1].keys()))
-        if not len(list(adj_list[start_index][1].keys())):
-            print('No adjency')
-            continue
-            while hop <= hops:
+
+        if list(adj_list[start_index][1].keys()):
+            while hop <= max_hops:
                 node_index = nodes.index(current_node)
-                if not len(list(adj_list[node_index][1].keys())):
+                current_paths.append(current_node)
+                if len(adj_list[node_index][1].keys()) == 0:
                     break
                 else:
                     next_node = np.random.choice(list(adj_list[node_index][1].keys()))
-                    current_paths.append(current_node)
                     current_node = next_node
-                    hop = hop+1
+                    hop = hop + 1
+        else:
+            current_paths = [central_node]
         nodes_on_paths.append(current_paths)
-    
-    set_path=set(inner for outer in nodes_on_paths for inner in outer)
-    
+
+    set_path = set(inner for outer in nodes_on_paths for inner in outer)
+
     nodes_to_keep = [node for node in nodes if node in set_path]
     nodes_to_keep_indexes = [nodes.index(node) for node in nodes_to_keep]
     pruned_adj_list = [adj_list[index] for index in nodes_to_keep_indexes]
     pruned_lat_n_longs = [lat_n_longs[index] for index in nodes_to_keep_indexes]
-    
-    return nodes_to_keep,pruned_adj_list,pruned_lat_n_longs
-    
+
+    return nodes_to_keep, pruned_adj_list, pruned_lat_n_longs
 
 
-def process_graph(graph, data_dict,central_node,n_paths=2,max_hops=20):
+def process_graph(graph, data_dict, central_node, n_paths=2, max_hops=4):
     """process a single graph, getting all adjacent nodes and
     and add them to a the dictionary mapping the stations"""
 
@@ -75,7 +74,15 @@ def process_graph(graph, data_dict,central_node,n_paths=2,max_hops=20):
     adj_list = list(graph.adjacency())
 
 
-    nodes,adj_list,lat_n_longs=prune_nodes(central_node,nodes,adj_list,lat_n_longs,n_paths,max_hops)
+    nodes, adj_list, lat_n_longs = prune_nodes(
+        central_node,
+        nodes,
+        adj_list,
+        lat_n_longs,
+        n_paths,
+        max_hops
+    )
+    nodes = list(map(str, nodes))
 
     #     mapping adjacent streets
     for i, node in enumerate(nodes):
@@ -108,8 +115,7 @@ def process_stations(data_dict, distance=300):
         central_node = get_central_node(graph, lat, long)
         data_dict["stations"][str(key)]["next_stops"].append(str(central_node))
 
-        process_graph(graph, temp_dict,central_node)
-        print(list(temp_dict['stations'].keys()))
+        process_graph(graph, temp_dict, central_node)
         temp_dict["stations"][str(central_node)]["next_stops"].append(str(key))
 
     data_dict["stations"].update(temp_dict["stations"])
