@@ -43,11 +43,11 @@ def process_graph(graph, data_dict):
         data_dict["stations"][str(node)]["type"] = "street"
         data_dict["stations"][str(node)]["lat"] = lat_n_longs[i][0]
         data_dict["stations"][str(node)]["lng"] = lat_n_longs[i][1]
-        next_stops = list(adj_list[i][1].keys())
+        next_stops = list(map(str, adj_list[i][1].keys()))
         data_dict["stations"][str(node)]["next_stops"] = next_stops
 
 
-def process_stations(data_dict, distance=100):
+def process_stations(data_dict, distance=300):
     """processing all stations from the input file"""
     #     opening the json and converting to dict
     temp_dict = {"stations": {}}
@@ -57,12 +57,17 @@ def process_stations(data_dict, distance=100):
 
         lat = data_dict["stations"][key]["lat"]
         long = data_dict["stations"][key]["lng"]
-        graph = ox.core.graph_from_point((lat, long), distance=distance)
+        graph = ox.core.graph_from_point(
+            center_point=(lat, long),
+            distance=distance,
+            network_type="drive",
+            simplify=True,
+        )
         central_node = get_central_node(graph, lat, long)
-        data_dict["stations"][key]["next_stops"].append(central_node)
+        data_dict["stations"][str(key)]["next_stops"].append(str(central_node))
 
         process_graph(graph, temp_dict)
-        temp_dict["stations"][str(central_node)]["next_stops"].append(key)
+        temp_dict["stations"][str(central_node)]["next_stops"].append(str(key))
 
     data_dict["stations"].update(temp_dict["stations"])
     return data_dict
