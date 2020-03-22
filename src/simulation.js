@@ -26,6 +26,31 @@ function compareDateTime(a, b) {
   return a.time - b.time;
 }
 
+class TimeQueue {
+  constructor() {
+    this.queue = this.travel_queue = new PriorityQueue({
+      comparator: compareDateTime,
+      strategy: PriorityQueue.BinaryHeapStrategy,
+    });
+  }
+
+  enqueue({ item, day, time }) {
+    this.queue.queue({ item, day, time });
+  }
+
+  dequeueExpired(day, time, callback) {
+    while (
+      this.queue.length > 0 &&
+      this.queue.peek().day === day &&
+      this.queue.peek().time <= time
+    ) {
+      const item = this.queue.dequeue().item;
+
+      callback(item);
+    }
+  }
+}
+
 export class Simulator {
   constructor(stations, actors, predecessorMaps) {
     this.stations = stations;
@@ -33,14 +58,8 @@ export class Simulator {
     this.predecessorMaps = predecessorMaps;
     this.time = 0;
     this.day = 0;
-    this.travel_queue = new PriorityQueue({
-      comparator: compareDateTime,
-      strategy: PriorityQueue.BinaryHeapStrategy,
-    });
-    this.queue = new PriorityQueue({
-      comparator: compareDateTime,
-      strategy: PriorityQueue.BinaryHeapStrategy,
-    });
+    this.travel_queue = new TimeQueue();
+    this.idle_queue = new TimeQueue();
     this.station_queues = Object.fromEntries(
       Object.entries(stations).map(([key, station]) => {
         const next_stops = Object.fromEntries(
@@ -130,8 +149,12 @@ export class Simulator {
     // TODO manage infection due to stay
 
     const time = timeToMinutes(entry.stay_until);
-    const queueItem = { actor, day: this.day + (time <= this.time), time };
-    this.queue.queue(queueItem);
+    const queueItem = {
+      item: actor,
+      day: this.day + (time <= this.time),
+      time,
+    };
+    this.idle_queue.enqueue(queueItem);
 
     if (this.waitCallback !== null) {
       this.waitCallback(actor, queueItem.day, queueItem.time);
@@ -186,26 +209,15 @@ export class Simulator {
   step() {
     this.stepTime();
 
-    while (
-      this.queue.length > 0 &&
-      this.queue.peek().day === this.day &&
-      this.queue.peek().time <= this.time
-    ) {
-      const actor = this.queue.dequeue().actor;
-
+    this.idle_queue.dequeueExpired(this.day, this.time, actor => {
       this.actorStayFinished(actor);
-    }
+    });
 
-    while (
-      this.travel_queue.length > 0 &&
-      this.travel_queue.peek().day === this.day &&
-      this.travel_queue.peek().time <= this.time
-    ) {
-      const arrived_actors = this.travel_queue.dequeue().actors;
-      arrived_actors.forEach(actor => {
+    this.travel_queue.dequeueExpired(this.day, this.time, arrivedActors => {
+      arrivedActors.forEach(actor => {
         this.actorArrivedAtStation(actor);
       });
-    }
+    });
 
     if (this.time % TRAVEL_TIME === 0) {
       Object.entries(this.station_queues).forEach(([station, nextStations]) => {
@@ -214,12 +226,12 @@ export class Simulator {
             actors.forEach(actor => {
               actor.state = TRANSITIONING;
             });
-            this.travel_queue.queue({
+            this.travel_queue.enqueue({
               day:
                 this.day +
                 Math.floor((this.time + TRAVEL_TIME) / MINUTES_PER_DAY),
               time: (this.time + TRAVEL_TIME) % MINUTES_PER_DAY,
-              actors,
+              item: actors,
             });
             this.handleInfectionTrigger(actors);
             nextStations[next] = [];
