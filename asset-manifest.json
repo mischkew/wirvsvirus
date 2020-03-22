@@ -1,0 +1,27 @@
+{
+  "files": {
+    "main.css": "/wirvsvirus/static/css/main.9971ae72.chunk.css",
+    "main.js": "/wirvsvirus/static/js/main.8dfcacda.chunk.js",
+    "main.js.map": "/wirvsvirus/static/js/main.8dfcacda.chunk.js.map",
+    "runtime-main.js": "/wirvsvirus/static/js/runtime-main.dbac568a.js",
+    "runtime-main.js.map": "/wirvsvirus/static/js/runtime-main.dbac568a.js.map",
+    "static/css/2.7c35e809.chunk.css": "/wirvsvirus/static/css/2.7c35e809.chunk.css",
+    "static/js/2.62e93b49.chunk.js": "/wirvsvirus/static/js/2.62e93b49.chunk.js",
+    "static/js/2.62e93b49.chunk.js.map": "/wirvsvirus/static/js/2.62e93b49.chunk.js.map",
+    "1cdd0fca5422b996813c.worker.js": "/wirvsvirus/1cdd0fca5422b996813c.worker.js",
+    "1cdd0fca5422b996813c.worker.js.map": "/wirvsvirus/1cdd0fca5422b996813c.worker.js.map",
+    "index.html": "/wirvsvirus/index.html",
+    "precache-manifest.efac00125ef022faf2e5c636b860ec01.js": "/wirvsvirus/precache-manifest.efac00125ef022faf2e5c636b860ec01.js",
+    "service-worker.js": "/wirvsvirus/service-worker.js",
+    "static/css/2.7c35e809.chunk.css.map": "/wirvsvirus/static/css/2.7c35e809.chunk.css.map",
+    "static/css/main.9971ae72.chunk.css.map": "/wirvsvirus/static/css/main.9971ae72.chunk.css.map",
+    "static/js/2.62e93b49.chunk.js.LICENSE.txt": "/wirvsvirus/static/js/2.62e93b49.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.dbac568a.js",
+    "static/css/2.7c35e809.chunk.css",
+    "static/js/2.62e93b49.chunk.js",
+    "static/css/main.9971ae72.chunk.css",
+    "static/js/main.8dfcacda.chunk.js"
+  ]
+}
