@@ -1,4 +1,5 @@
 import PriorityQueue from 'js-priority-queue';
+import { generatePathFromPredecessorMap } from './pathGeneration';
 import { INFECTED } from './actorGeneration';
 
 const logging = false;
@@ -26,10 +27,10 @@ function compareDateTime(a, b) {
 }
 
 export class Simulator {
-  constructor(stations, actors, paths) {
+  constructor(stations, actors, predecessorMaps) {
     this.stations = stations;
     this.actors = actors;
-    this.paths = paths;
+    this.predecessorMaps = predecessorMaps;
     this.time = 0;
     this.day = 0;
     this.travel_queue = new PriorityQueue({
@@ -98,7 +99,10 @@ export class Simulator {
     }
 
     const destination = actor.schedule[actor.current_schedule].station;
-    actor.path = this.paths[currentStation][destination];
+    actor.path = generatePathFromPredecessorMap(
+      this.predecessorMaps[currentStation],
+      destination
+    );
     actor.path_position = 0;
 
     if (actor.path.length === 1) {
