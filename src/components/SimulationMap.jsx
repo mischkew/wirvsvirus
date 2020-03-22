@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Map, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
@@ -6,6 +6,7 @@ import Edges from './Edges';
 import { renderStationMarkers } from './StationMarker';
 import { getPosition } from '../utils';
 import AgentsLayer from './AgentsLayer';
+import ProgressLayer from './ProgressLayer';
 
 // required leaflet styles
 import 'leaflet/dist/leaflet.css';
@@ -39,6 +40,11 @@ export default function SimulationMap({
     }
   }
 
+  const [simulationProgress, setSimulationProgress] = useState({
+    day: 0,
+    time: 0,
+  });
+
   return (
     <Map
       id="simulation-map"
@@ -54,7 +60,14 @@ export default function SimulationMap({
       />
       <Edges stations={stations} />
       {renderStationMarkers(stations)}
-      <AgentsLayer stations={stations} simulationOptions={simulationOptions} />
+      <AgentsLayer
+        stations={stations}
+        simulationOptions={simulationOptions}
+        onUpdate={setSimulationProgress}
+      />
+      <ProgressLayer className="simulation-progress">
+        Day: {simulationProgress.day}, Time: {simulationProgress.time}
+      </ProgressLayer>
     </Map>
   );
 }

@@ -1,7 +1,7 @@
 import L, { Util } from 'leaflet';
 import regl from 'regl';
 import { generatePaths, generateActors } from '../actorGeneration';
-import { Simulator } from '../simulation';
+import { Simulator, WAITING } from '../simulation';
 import { getPosition } from '../utils';
 import { TRANSPARENT_RGBA, HEALTHY_RGB } from '../branding';
 
@@ -15,6 +15,10 @@ L.AgentsLayer = L.Layer.extend({
     // contains simulation settings from the user
     // see `data-design/actor.json`
     simulation: null,
+
+    // a callback which is called everytime the agent loop updated, i.e. can be
+    // used to display simulation progress outside of the layer via react
+    onUpdate: ({ day, time }) => {},
   },
 
   initialize: function(stations, options) {
@@ -93,11 +97,16 @@ L.AgentsLayer = L.Layer.extend({
   _render: function() {
     this._draw = this._buildDraw();
 
-    // TODO: only get the first iteration for now
-    const agents = this._simulation.step();
-
     this._frameLoop = this._regl.frame(() => {
-      // TODO: generate agents here in a loop!
+      // TODO: generate agents independ of the render loop in a worker thread to
+      // control simulation time
+      const agents = this._simulation.step();
+
+      this.options.onUpdate({
+        day: this._simulation.day,
+        time: this._simulation.time,
+      });
+
       this._regl.clear({
         color: TRANSPARENT_RGBA,
       });
@@ -116,16 +125,22 @@ L.AgentsLayer = L.Layer.extend({
     const mapSize = this._map.getSize();
 
     return function draw(agents) {
-      const stations = agents.map(
-        agent => agent.schedule[agent.current_schedule].station
-      );
-      const coordinates = stations.map(station =>
-        this._map.latLngToContainerPoint(stationPositions.get(station))
-      );
+      const startCoordinates = agents.map(agent => {
+        const station = agent.schedule[agent.current_schedule].station;
+        return this._map.latLngToContainerPoint(stationPositions.get(station));
+      });
+      const endCoordinates = agents.map(agent => {
+        const index =
+          agent.current_schedule + 1 === agent.schedule.length
+            ? 0
+            : agent.current_schedule + 1;
+        const station = agent.schedule[index].station;
+        return this._map.latLngToContainerPoint(stationPositions.get(station));
+      });
 
       this._regl({
         frag: `
-          precision mediump float;
+          precision lowp float;
 
           // input RGB color with values between 0 and 255
           varying vec3 frag_color;
@@ -138,14 +153,35 @@ L.AgentsLayer = L.Layer.extend({
         vert: `
           precision lowp float;
 
-          attribute vec2 position;
+          attribute vec2 startCoordinate;
+          attribute vec2 endCoordinate;
+
+          // "boolean" flag if the agent is currently waiting. As no boolean
+          // values exist in GLSL, we pass a float.
+          attribute float isWaiting;
 
           uniform float pointWidth;
           uniform vec3 color;
           uniform float mapWidth;
           uniform float mapHeight;
 
+          // delta of the rendering time since last update
+          uniform float deltaTime;
+
+          // time progress of the simulation
+          uniform float globalTime;
+
           varying vec3 frag_color;
+
+          // We assume that each start and end position is equi-distanced in the
+          // graph and takes the same amount of time for each agent to reach.
+          // Every trafficInterval ticks an agent can travel frome one station
+          // to the next, which in turn takes trafficInterval ticks. Based on
+          // these assumption we can render the position of the agents on the
+          // route.
+          vec2 positionOnRoute() {
+            return startCoordinate;
+          }
 
           // helper function to transform from pixel space to normalized device
           // coordinates (NDC) in NDC (0,0) is the middle, (-1, 1) is the top
@@ -163,22 +199,25 @@ L.AgentsLayer = L.Layer.extend({
 
           void main() {
             frag_color = color;
-            vec2 offset = randomOffset();
 
             gl_PointSize = pointWidth;
-            gl_Position = vec4(normalizeCoords(position) + offset, 0.0, 1.0);
+            gl_Position = vec4(normalizeCoords(positionOnRoute()), 0.0, 1.0);
           }
       `,
         attributes: {
-          position: coordinates.map(c => [c.x, c.y]),
+          startCoordinate: startCoordinates.map(c => [c.x, c.y]),
+          endCoordinate: endCoordinates.map(c => [c.x, c.y]),
+          isWaiting: agents.map(agent => (agent.state === WAITING ? 1.0 : 0.0)),
         },
         uniforms: {
           pointWidth: 3.0,
           color: HEALTHY_RGB,
           mapWidth: mapSize.x,
           mapHeight: mapSize.y,
+          deltaTime: this._regl.context('deltaTime'),
+          globalTime: this._simulation.time,
         },
-        count: coordinates.length,
+        count: startCoordinates.length,
         primitive: 'points',
       })();
     };
@@ -196,19 +235,21 @@ L.AgentsLayer = L.Layer.extend({
   _reset: function() {
     const topLeft = this._map.containerPointToLayerPoint([0, 0]);
     L.DomUtil.setPosition(this._canvas, topLeft);
+  },
 
+  _restart: function() {
     this._simulation = this._initSimulation();
     this._draw = this._buildDraw();
   },
 
   updateStations: function(stations) {
     this._stations = stations;
-    this._reset();
+    this._restart();
   },
 
   updateOptions: function(options) {
     Util.setOptions(this, options);
-    this._reset();
+    this._restart();
   },
 });
 
