@@ -22,7 +22,11 @@ StationMarker.propTypes = {
 };
 
 export function renderStationMarkers(stations) {
-  return Object.entries(stations).map(([id, station]) => {
-    return <StationMarker key={id} position={getPosition(station)} />;
-  });
+  return Object.entries(stations)
+    .filter(([id, station]) => {
+      return station.type === 'station';
+    })
+    .map(([id, station]) => {
+      return <StationMarker key={id} position={getPosition(station)} />;
+    });
 }
