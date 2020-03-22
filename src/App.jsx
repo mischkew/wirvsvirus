@@ -11,6 +11,7 @@ function App() {
   return (
     <div className="App">
       <SimulationMap
+        maxZoom={20}
         position={berlinCenter}
         box={berlincBox}
         stations={stations}

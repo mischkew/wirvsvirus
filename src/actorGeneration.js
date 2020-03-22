@@ -41,7 +41,9 @@ export function generateScheduleEntry(template, stations) {
 export function generatePredecessorMap(start, stations) {
   let queue = [];
   let seen = new Set();
-  let predecessor = { [start]: null };
+  let predecessor = {
+    [start]: null
+  };
   seen.add(start);
   queue.push(start);
 
@@ -56,7 +58,24 @@ export function generatePredecessorMap(start, stations) {
     });
   }
 
+  if (Object.keys(predecessor).length < Object.keys(stations).length) {
+    // throw new Error('Graph is not connected!');
+  }
+
   return predecessor;
+}
+
+export function getLargestCC(stations) {
+  const map = generatePredecessorMap(Object.keys(stations)[0], stations);
+  const cc = {};
+
+  Object.entries(stations).forEach(([key, value]) => {
+    if (key in map) {
+      cc[key] = value;
+    }
+  });
+
+  return cc;
 }
 
 export function generatePathFromPredecessorMap(map, end) {
@@ -88,24 +107,11 @@ export function generatePaths(actors, stations) {
   Object.keys(stations).forEach((station, index, arr) => {
     maps[station] = generatePredecessorMap(station, stations);
   });
-  actors.forEach(actor => {
-    actor.schedule.forEach((entry, index, arr) => {
-      const start = entry.station;
-      let end;
-      if (index === arr.length - 1) {
-        end = arr[0].station;
-      } else {
-        const nextEntry = arr[index + 1];
-        end = nextEntry.station;
-      }
-      if (!(start in paths)) {
-        paths[start] = {};
-      }
-      if (end in paths[start]) {
-        return;
-      }
 
-      paths[start][end] = generatePathFromPredecessorMap(maps[start], end);
+  Object.entries(maps).forEach(([start, map]) => {
+    paths[start] = {};
+    Object.keys(stations).forEach(end => {
+      paths[start][end] = generatePathFromPredecessorMap(map, end);
     });
   });
 
