@@ -257,7 +257,12 @@ L.AgentsLayer = L.Layer.extend({
             else {
               gl_PointSize = pointWidth;
             }
-            gl_Position = vec4(normalizeCoords(positionOnRoute()), 0.0, 1.0);
+
+            vec4 pos = vec4(normalizeCoords(positionOnRoute()), 0.0, 1.0);
+            if (pos.x < -1.0 || pos.x > 1.0 || pos.y < -1.0 || pos.y > 1.0) {
+              return;
+            }
+            gl_Position = pos;
           }
       `,
         attributes: {
