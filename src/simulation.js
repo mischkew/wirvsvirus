@@ -147,6 +147,14 @@ export class Actor {
     while (this.currentScheduleExpired()) {
       this._cycleSchedule();
     }
+
+    this.maybeSkipSchedule();
+  }
+
+  maybeSkipSchedule() {
+    if (Math.random() > this.schedule[this.current_schedule].probability) {
+      this._cycleSchedule();
+    }
   }
 
   advancePath({ onNext, onArrivedAtDestination }) {
