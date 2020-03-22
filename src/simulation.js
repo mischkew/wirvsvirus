@@ -5,7 +5,7 @@ import { INFECTED } from './actorGeneration';
 const logging = false;
 export const WAITING = 0;
 export const TRANSITIONING = 1;
-export const TRAVEL_TIME = 100;
+export const TRAVEL_TIME = 10;
 export const INFECTION_SPEED = 0.1;
 
 export const MINUTES_PER_DAY = 24 * 60;
@@ -31,7 +31,7 @@ export class Simulator {
     this.stations = stations;
     this.actors = actors;
     this.predecessorMaps = predecessorMaps;
-    this.time = 0;
+    this.time = 6 * 60;
     this.day = 0;
     this.travel_queue = new PriorityQueue({
       comparator: compareDateTime,

@@ -32,7 +32,7 @@ export const testStations = {
 };
 
 export const testAgentsTemplate = {
-  count: 1,
+  count: 100,
   recovery_time: 10,
   infection_probability: 0.2,
   schedule: [
@@ -61,12 +61,12 @@ export const testAgentsTemplate = {
     {
       name: 'leisure',
       probability: {
-        value: 0.0,
-        variance: 0.1,
+        value: 0.2,
+        variance: 0,
       },
       stay_until: {
-        time: 2100,
-        variance: 100,
+        time: 1900,
+        variance: 200,
       },
     },
   ],

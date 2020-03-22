@@ -1,9 +1,10 @@
-import { generatePaths, generateActors } from './actorGeneration';
+import { generateActors, INFECTED } from './actorGeneration';
+import { generatePredecessorMaps } from './pathGeneration';
 import { Simulator, WAITING, TRANSITIONING } from './simulation';
 import { HEALTHY } from './actorGeneration';
 
 let actors = null;
-let allPaths = null;
+let allMaps = null;
 let simulator = null;
 let stationPositions = null;
 
@@ -13,7 +14,7 @@ let isRunning = false;
 export function setupSimulation(simulationOptions, stations) {
   if (
     actors !== null ||
-    allPaths !== null ||
+    allMaps !== null ||
     simulator !== null ||
     stationPositions !== null
   ) {
@@ -23,8 +24,12 @@ export function setupSimulation(simulationOptions, stations) {
   }
 
   actors = generateActors(simulationOptions, stations);
-  allPaths = generatePaths(actors, stations);
-  simulator = new Simulator(stations, actors, allPaths);
+  allMaps = generatePredecessorMaps(stations);
+  simulator = new Simulator(stations, actors, allMaps);
+
+  // infect the first actor
+  simulator.actors[0].status = INFECTED;
+
   simulator.startActors();
 
   stationPositions = new Map(
@@ -63,6 +68,7 @@ function encodeAgents(agents) {
       nextStation = currentStation; // irrelevant in that case as we are not transitioning
     }
 
+    // console.log('time', JSON.stringify(simulator.time));
     // console.log(
     //   'is transitioning',
     //   JSON.stringify(agent.state === TRANSITIONING)
@@ -80,7 +86,7 @@ function encodeAgents(agents) {
       stationPositions.get(currentStation),
       stationPositions.get(nextStation),
       agent.state === WAITING ? 1.0 : 0.0,
-      HEALTHY,
+      agent.status === INFECTED ? 1.0 : 0.0,
     ];
   }
 
@@ -133,7 +139,7 @@ export function runSimulation(updateInterval) {
 export function destroySimulation() {
   isRunning = false;
   actors = null;
-  allPaths = null;
+  allMaps = null;
   simulator = null;
   stationPositions = null;
 }

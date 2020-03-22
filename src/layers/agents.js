@@ -1,7 +1,7 @@
 import L, { Util } from 'leaflet';
 import regl from 'regl';
 import { TRAVEL_TIME } from '../simulation';
-import { TRANSPARENT_RGBA, HEALTHY_RGB } from '../branding';
+import { TRANSPARENT_RGBA, HEALTHY_RGB, INFECTED_RGB } from '../branding';
 import SimulationWorker from 'workerize-loader!../simulationWorker'; // eslint-disable-line import/no-webpack-loader-syntax
 
 //
@@ -136,7 +136,7 @@ L.AgentsLayer = L.Layer.extend({
 
       this.options.onUpdate({
         day,
-        time,
+        time: Math.floor(time),
         count: this.options.simulation.count,
       });
 
@@ -196,9 +196,11 @@ L.AgentsLayer = L.Layer.extend({
           // "boolean" flag if the agent is currently waiting. As no boolean
           // values exist in GLSL, we pass a float.
           attribute float isWaiting;
+          attribute float isInfected;
 
           uniform float pointWidth;
-          uniform vec3 color;
+          uniform vec3 healthyColor;
+          uniform vec3 infectedColor;
           uniform float mapWidth;
           uniform float mapHeight;
 
@@ -247,6 +249,10 @@ L.AgentsLayer = L.Layer.extend({
           }
 
           void main() {
+            vec3 color = healthyColor;
+            if (isInfected > 0.5) {
+              color = infectedColor;
+            }
             frag_color = color;
 
             gl_PointSize = pointWidth;
@@ -259,10 +265,12 @@ L.AgentsLayer = L.Layer.extend({
           // according to proctol, the isWaiting flag is stored as a float in
           // agent field 2
           isWaiting: agents.map(agent => agent[2]),
+          isInfected: agents.map(agent => agent[3]),
         },
         uniforms: {
           pointWidth: 3.0,
-          color: HEALTHY_RGB,
+          healthyColor: HEALTHY_RGB,
+          infectedColor: INFECTED_RGB,
           mapWidth: mapSize.x,
           mapHeight: mapSize.y,
           deltaTime: this._regl.context('deltaTime'),

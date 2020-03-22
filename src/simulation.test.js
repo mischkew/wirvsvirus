@@ -211,7 +211,7 @@ describe('CLI Simulation', () => {
     );
   }
 
-  it('runs with example data', () => {
+  it.only('runs with example data', () => {
     let actors = generateActors(testAgentsTemplate, testStations).map(
       (actor, index) => {
         actor.name = index;
@@ -224,7 +224,7 @@ describe('CLI Simulation', () => {
     simulate(testStations, actors, predecessorMaps);
   });
 
-  it.only('runs with real data', () => {
+  it('runs with real data', () => {
     // convert to string
     const berlinStations = convertStationsToString(
       selectStationsOnly(berlinStationData['stations'])
