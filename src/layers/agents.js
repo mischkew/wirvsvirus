@@ -17,7 +17,7 @@ L.AgentsLayer = L.Layer.extend({
 
     // a callback which is called everytime the agent loop updated, i.e. can be
     // used to display simulation progress outside of the layer via react
-    onUpdate: ({ count, day, time }) => {},
+    onUpdate: ({ count, day, time, infectedCount }) => {},
 
     // speed of the simulation in ticks. Minimum 1. The highter the number, the
     // faster the simulation runs. This parameter basically tells the renderer
@@ -127,19 +127,6 @@ L.AgentsLayer = L.Layer.extend({
     this._draw = this._buildDraw();
 
     this._frameLoop = this._regl.frame(() => {
-      let day = null;
-      let time = null;
-      if (this._agents.length === 3) {
-        day = this._agents[0];
-        time = this._agents[1];
-      }
-
-      this.options.onUpdate({
-        day,
-        time: Math.floor(time),
-        count: this.options.simulation.count,
-      });
-
       this._regl.clear({
         color: TRANSPARENT_RGBA,
       });
@@ -171,6 +158,15 @@ L.AgentsLayer = L.Layer.extend({
         // stored in field 1
         const point = this._map.latLngToContainerPoint(agent[1]);
         return [point.x, point.y];
+      });
+
+      this.options.onUpdate({
+        day,
+        time: Math.floor(time),
+        count: this.options.simulation.count,
+        infectedCount: agents.reduce((acc, agent) => {
+          return acc + agent[3];
+        }, 0),
       });
       // console.timeEnd('coords');
 
@@ -268,7 +264,7 @@ L.AgentsLayer = L.Layer.extend({
           isInfected: agents.map(agent => agent[3]),
         },
         uniforms: {
-          pointWidth: 3.0,
+          pointWidth: 5.0,
           healthyColor: HEALTHY_RGB,
           infectedColor: INFECTED_RGB,
           mapWidth: mapSize.x,

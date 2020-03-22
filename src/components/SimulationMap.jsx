@@ -44,6 +44,7 @@ export default function SimulationMap({
     count: 0,
     day: 0,
     time: 0,
+    infectedCount: 0,
   });
 
   return (
@@ -68,7 +69,7 @@ export default function SimulationMap({
       />
       <ProgressLayer className="simulation-progress">
         Count: {simulationProgress.count}, Day: {simulationProgress.day}, Time:{' '}
-        {simulationProgress.time}
+        {simulationProgress.time}, Infected: {simulationProgress.infectedCount}
       </ProgressLayer>
     </Map>
   );
