@@ -42,7 +42,7 @@ export const testStations = {
 };
 
 export const testAgentsTemplate = {
-  count: 100000,
+  count: 10000,
   recovery_time: 10,
   infection_probability: 0.2,
   schedule: [
