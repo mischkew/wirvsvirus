@@ -1,7 +1,6 @@
-import { generateActors, INFECTED } from './actorGeneration';
+import { generateActors } from './actorGeneration';
 import { generatePredecessorMaps } from './pathGeneration';
 import { Simulator, WAITING, TRANSITIONING } from './simulation';
-import { HEALTHY } from './actorGeneration';
 
 let actors = null;
 let allMaps = null;
@@ -28,7 +27,7 @@ export function setupSimulation(simulationOptions, stations) {
   simulator = new Simulator(stations, actors, allMaps);
 
   // infect the first actor
-  simulator.actors[0].status = INFECTED;
+  simulator.infect(simulator.actors[0]);
 
   simulator.startActors();
 
@@ -86,7 +85,7 @@ function encodeAgents(agents) {
       stationPositions.get(currentStation),
       stationPositions.get(nextStation),
       agent.state === WAITING ? 1.0 : 0.0,
-      agent.status === INFECTED ? 1.0 : 0.0,
+      agent.status,
     ];
   }
 

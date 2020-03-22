@@ -1,7 +1,12 @@
 import L, { Util } from 'leaflet';
 import regl from 'regl';
 import { TRAVEL_TIME } from '../simulation';
-import { TRANSPARENT_RGBA, HEALTHY_RGB, INFECTED_RGB } from '../branding';
+import {
+  TRANSPARENT_RGBA,
+  HEALTHY_RGB,
+  INFECTED_RGB,
+  RECOVERED_RGB,
+} from '../branding';
 import SimulationWorker from 'workerize-loader!../simulationWorker'; // eslint-disable-line import/no-webpack-loader-syntax
 
 //
@@ -17,7 +22,7 @@ L.AgentsLayer = L.Layer.extend({
 
     // a callback which is called everytime the agent loop updated, i.e. can be
     // used to display simulation progress outside of the layer via react
-    onUpdate: ({ count, day, time, infectedCount }) => {},
+    onUpdate: ({ count, day, time, infectedCount, recoveredCount }) => {},
 
     // speed of the simulation in ticks. Minimum 1. The highter the number, the
     // faster the simulation runs. This parameter basically tells the renderer
@@ -165,7 +170,10 @@ L.AgentsLayer = L.Layer.extend({
         time: Math.floor(time),
         count: this.options.simulation.count,
         infectedCount: agents.reduce((acc, agent) => {
-          return acc + agent[3];
+          return acc + (agent[3] === 1 ? 1 : 0);
+        }, 0),
+        recoveredCount: agents.reduce((acc, agent) => {
+          return acc + (agent[3] === 2 ? 1 : 0);
         }, 0),
       });
       // console.timeEnd('coords');
@@ -192,11 +200,12 @@ L.AgentsLayer = L.Layer.extend({
           // "boolean" flag if the agent is currently waiting. As no boolean
           // values exist in GLSL, we pass a float.
           attribute float isWaiting;
-          attribute float isInfected;
+          attribute float health;
 
           uniform float pointWidth;
           uniform vec3 healthyColor;
           uniform vec3 infectedColor;
+          uniform vec3 recoveredColor;
           uniform float mapWidth;
           uniform float mapHeight;
 
@@ -246,13 +255,26 @@ L.AgentsLayer = L.Layer.extend({
 
           void main() {
             vec3 color = healthyColor;
-            if (isInfected > 0.5) {
+            if (health > 0.5) {
               color = infectedColor;
+            }
+            if (health > 1.5) {
+              color = recoveredColor;
             }
             frag_color = color;
 
-            gl_PointSize = pointWidth;
-            gl_Position = vec4(normalizeCoords(positionOnRoute()), 0.0, 1.0);
+            if(isWaiting > 0.5) {
+              gl_PointSize = 3.0;
+            }
+            else {
+              gl_PointSize = pointWidth;
+            }
+
+            vec4 pos = vec4(normalizeCoords(positionOnRoute()), 0.0, 1.0);
+            if (pos.x < -1.0 || pos.x > 1.0 || pos.y < -1.0 || pos.y > 1.0) {
+              return;
+            }
+            gl_Position = pos;
           }
       `,
         attributes: {
@@ -261,12 +283,13 @@ L.AgentsLayer = L.Layer.extend({
           // according to proctol, the isWaiting flag is stored as a float in
           // agent field 2
           isWaiting: agents.map(agent => agent[2]),
-          isInfected: agents.map(agent => agent[3]),
+          health: agents.map(agent => agent[3]),
         },
         uniforms: {
           pointWidth: 5.0,
           healthyColor: HEALTHY_RGB,
           infectedColor: INFECTED_RGB,
+          recoveredColor: RECOVERED_RGB,
           mapWidth: mapSize.x,
           mapHeight: mapSize.y,
           deltaTime: this._regl.context('deltaTime'),

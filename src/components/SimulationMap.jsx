@@ -12,6 +12,23 @@ import ProgressLayer from './ProgressLayer';
 import 'leaflet/dist/leaflet.css';
 import './SimulationMap.css';
 
+function toHours(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const hourMinutes = minutes - hours * 60;
+
+  let hoursString = `${hours}`;
+  if (hoursString.length === 1) {
+    hoursString = '0' + hoursString;
+  }
+
+  let hourMinutesString = `${hourMinutes}`;
+  if (hourMinutesString.length === 1) {
+    hourMinutesString = '0' + hourMinutesString;
+  }
+
+  return `${hoursString}:${hourMinutesString}`;
+}
+
 export default function SimulationMap({
   position,
   box,
@@ -45,6 +62,7 @@ export default function SimulationMap({
     day: 0,
     time: 0,
     infectedCount: 0,
+    recoveredCount: 0,
   });
 
   return (
@@ -68,8 +86,16 @@ export default function SimulationMap({
         onUpdate={setSimulationProgress}
       />
       <ProgressLayer className="simulation-progress">
-        Count: {simulationProgress.count}, Day: {simulationProgress.day}, Time:{' '}
-        {simulationProgress.time}, Infected: {simulationProgress.infectedCount}
+        <div>
+          <span>
+            Infected: {simulationProgress.infectedCount} of{' '}
+            {simulationProgress.count - simulationProgress.recoveredCount}
+          </span>
+          <span>
+            Day: {simulationProgress.day} ({toHours(simulationProgress.time)})
+          </span>
+          <span>Recovered: {simulationProgress.recoveredCount}</span>
+        </div>
       </ProgressLayer>
     </Map>
   );

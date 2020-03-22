@@ -1,3 +1,15 @@
 #simulation-map {
   height: 720px;
 }
+
+.simulation-progress div {
+  background-color: #3b6978;
+  display: inline-block;
+}
+
+.simulation-progress span {
+  padding: 8px;
+  font-weight: bold;
+  color: white;
+  font-size: 16px;
+}
