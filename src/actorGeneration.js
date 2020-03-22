@@ -1,10 +1,10 @@
-const HEALTHY = 0;
-const INFECTED = 1;
-const RECOVERED = 2;
-const DEAD = 3;
+export const HEALTHY = 0;
+export const INFECTED = 1;
+export const RECOVERED = 2;
+export const DEAD = 3;
 
-const WAITING = 0;
-const TRASITIONING = 1;
+export const WAITING = 0;
+export const TRASITIONING = 1;
 
 function selectRandom(array) {
   return array[Math.floor(Math.random() * array.length)];
@@ -38,10 +38,12 @@ export function generateScheduleEntry(template, stations) {
   return entry;
 }
 
-export function generatePath(start, end, stations) {
+export function generatePredecessorMap(start, stations) {
   let queue = [];
   let seen = new Set();
-  let predecessor = { [start]: null };
+  let predecessor = {
+    [start]: null
+  };
   seen.add(start);
   queue.push(start);
 
@@ -56,11 +58,32 @@ export function generatePath(start, end, stations) {
     });
   }
 
+  if (Object.keys(predecessor).length < Object.keys(stations).length) {
+    // throw new Error('Graph is not connected!');
+  }
+
+  return predecessor;
+}
+
+export function getLargestCC(stations) {
+  const map = generatePredecessorMap(Object.keys(stations)[0], stations);
+  const cc = {};
+
+  Object.entries(stations).forEach(([key, value]) => {
+    if (key in map) {
+      cc[key] = value;
+    }
+  });
+
+  return cc;
+}
+
+export function generatePathFromPredecessorMap(map, end) {
   let currentStation = end;
   let path = [];
   while (currentStation !== null) {
     path.unshift(currentStation);
-    currentStation = predecessor[currentStation];
+    currentStation = map[currentStation];
     if (currentStation === undefined) {
       throw new Error(
         'Graph is not connected! Maybe there is an unidirectional edge?'
@@ -71,26 +94,24 @@ export function generatePath(start, end, stations) {
   return path;
 }
 
+export function generatePath(start, end, stations) {
+  return generatePathFromPredecessorMap(
+    generatePredecessorMap(start, stations),
+    end
+  );
+}
+
 export function generatePaths(actors, stations) {
   let paths = {};
-  actors.forEach(actor => {
-    actor.schedule.forEach((entry, index, arr) => {
-      const start = entry.station;
-      let end;
-      if (index === arr.length - 1) {
-        end = arr[0].station;
-      } else {
-        const nextEntry = arr[index + 1];
-        end = nextEntry.station;
-      }
-      if (!(start in paths)) {
-        paths[start] = {};
-      }
-      if (end in paths[start]) {
-        return;
-      }
+  let maps = {};
+  Object.keys(stations).forEach((station, index, arr) => {
+    maps[station] = generatePredecessorMap(station, stations);
+  });
 
-      paths[start][end] = generatePath(start, end, stations);
+  Object.entries(maps).forEach(([start, map]) => {
+    paths[start] = {};
+    Object.keys(stations).forEach(end => {
+      paths[start][end] = generatePathFromPredecessorMap(map, end);
     });
   });
 
@@ -104,7 +125,7 @@ export function generateActors(actorTemplate, stations) {
       generateScheduleEntry(scheduleTemplate, station_names)
     );
     const station_location = stations[schedule[0].station].position;
-    const actor = {
+    let actor = {
       status: HEALTHY,
       schedule,
       current_station: schedule[0].station,

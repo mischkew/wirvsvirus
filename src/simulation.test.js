@@ -7,7 +7,15 @@ import {
   MINUTES_PER_DAY,
 } from './simulation';
 import { testStations, testAgentsTemplate } from './testUtils';
-import { HEALTHY, generateActors, generatePaths } from './actorGeneration';
+import {
+  HEALTHY,
+  INFECTED,
+  generateActors,
+  generatePaths,
+  getLargestCC,
+} from './actorGeneration';
+
+import berlinStationData from './assets/stations.json';
 
 function next(sim) {
   sim.time += TRAVEL_TIME - 1;
@@ -143,24 +151,15 @@ function minutesToTime(min) {
 }
 
 describe('CLI Simulation', () => {
-  it('runs', () => {
-    const actors = generateActors(testAgentsTemplate, testStations).map(
-      (actor, index) => {
-        actor.name = index;
-        return actor;
-      }
-    );
+  function simulate(stations, actors, paths) {
+    actors[0].status = INFECTED;
 
-    const paths = generatePaths(actors, testStations);
+    // actors.forEach(actor => {
+    //   console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
+    //   console.log(actor.schedule);
+    // });
 
-    console.log(JSON.stringify(actors, null, 2));
-
-    actors.forEach(actor => {
-      console.log(`Actor ${actor.name} starts at ${actor.current_station}`);
-      console.log(actor.schedule);
-    });
-
-    let sim = new Simulator(testStations, actors, paths);
+    let sim = new Simulator(stations, actors, paths);
 
     function onArrival(actor) {
       console.log(
@@ -186,15 +185,16 @@ describe('CLI Simulation', () => {
       );
     }
 
-    sim.finishStayCallback = onLeave;
-    sim.arrivalCallback = onArrival;
-    sim.waitCallback = onWait;
+    // sim.finishStayCallback = onLeave;
+    // sim.arrivalCallback = onArrival;
+    // sim.waitCallback = onWait;
     sim.startActors();
 
+    const startTime = Date.now();
     const sim_days = 1;
     for (let day = 0; day < sim_days; ++day) {
-      console.log(`Day ${day}`);
-      console.log(`Sim: ${sim.day} ${sim.time}`);
+      // console.log(`Day ${day}`);
+      // console.log(`Sim: ${sim.day} ${sim.time}`);
       for (let minute = 0; minute < MINUTES_PER_DAY; ++minute) {
         if (minute === timeToMinutes(2002)) {
           let dummy;
@@ -202,5 +202,55 @@ describe('CLI Simulation', () => {
         sim.step();
       }
     }
+    const endTime = Date.now();
+    console.log(`Simlation Time: ${endTime - startTime}ms`);
+
+    const infected = actors.reduce((acc, actor) => {
+      return acc + (actor.status === INFECTED ? 1 : 0);
+    }, 0);
+
+    console.log(
+      `${infected} of ${actors.length} people are infected after ${sim_days} days.`
+    );
+  }
+
+  it('runs with example data', () => {
+    let actors = generateActors(testAgentsTemplate, testStations).map(
+      (actor, index) => {
+        actor.name = index;
+        return actor;
+      }
+    );
+
+    const paths = generatePaths(actors, testStations);
+
+    simulate(testStations, actors, paths);
+  });
+
+  it('runs with real data', () => {
+    const berlinStations = Object.fromEntries(
+      Object.entries(berlinStationData['stations']).map(([key, value]) => {
+        const next_stops = value.next_stops.map(stop => {
+          return stop + '';
+        });
+        return [key + '', { ...value, next_stops }];
+      })
+    );
+    const cc = getLargestCC(berlinStations);
+
+    const all_next_stops = Object.entries(cc).reduce((acc, [key, value]) => {
+      value.next_stops.forEach(stop => acc.add(stop));
+      return acc;
+    }, new Set());
+
+    expect(all_next_stops.size).toBe(Object.keys(cc).length);
+
+    let actors = generateActors(testAgentsTemplate, cc).map((actor, index) => {
+      actor.name = index;
+      return actor;
+    });
+    const paths = generatePaths(actors, cc);
+
+    simulate(berlinStations, actors, paths);
   });
 });
