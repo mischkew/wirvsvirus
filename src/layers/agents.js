@@ -251,7 +251,12 @@ L.AgentsLayer = L.Layer.extend({
             }
             frag_color = color;
 
-            gl_PointSize = pointWidth;
+            if(isWaiting > 0.5) {
+              gl_PointSize = 3.0;
+            }
+            else {
+              gl_PointSize = pointWidth;
+            }
             gl_Position = vec4(normalizeCoords(positionOnRoute()), 0.0, 1.0);
           }
       `,
