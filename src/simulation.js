@@ -26,21 +26,177 @@ function compareDateTime(a, b) {
   return a.time - b.time;
 }
 
+class TimeQueue {
+  constructor() {
+    this.queue = this.travel_queue = new PriorityQueue({
+      comparator: compareDateTime,
+      strategy: PriorityQueue.BinaryHeapStrategy,
+    });
+  }
+
+  enqueue({ item, day, time }) {
+    this.queue.queue({ item, day, time });
+  }
+
+  dequeueExpired(day, time, callback) {
+    while (
+      this.queue.length > 0 &&
+      this.queue.peek().day === day &&
+      this.queue.peek().time <= time
+    ) {
+      const item = this.queue.dequeue().item;
+
+      callback(item);
+    }
+  }
+}
+
+export class Actor {
+  constructor({
+    status,
+    schedule,
+    current_station,
+    current_schedule,
+    state,
+    path,
+    path_position,
+    sim,
+  }) {
+    this.status = status;
+    this.schedule = schedule;
+    this.current_station = current_station;
+    this.current_schedule = current_schedule;
+    this.state = state;
+    this.path = path;
+    this.path_position = path_position;
+    this.sim = sim;
+  }
+
+  arriveAtNextPathStop() {
+    this.state = WAITING;
+
+    this.advancePath({
+      onNext: () => {
+        this.sim.actorWaitsForDeparture({
+          actor: this,
+          station: this.current_station,
+          destination: this.nextPathStop(),
+        });
+      },
+      onArrivedAtDestination: () => {
+        this.arriveAtScheduleLocation();
+      },
+    });
+  }
+
+  arriveAtScheduleLocation() {
+    if (this.currentScheduleExpired()) {
+      this.advanceSchedule();
+    }
+    this.sim.scheduleWait(
+      this,
+      this.schedule[this.current_schedule].stay_until
+    );
+  }
+
+  currentScheduleExpired() {
+    // check if the current schedule entry's stay_until is in the past
+    // the first entry (residence) can never expire
+    // meaning the actor will always wait at home if nothing else is left on the schedule
+    return (
+      this.current_schedule !== 0 &&
+      this.schedule[this.current_schedule].time < this.sim.time
+    );
+  }
+
+  stayFinished() {
+    this.advanceSchedule();
+
+    this.preparePath({
+      onAlreadyThere: () => {
+        this.arriveAtScheduleLocation();
+      },
+      onPrepared: () => {
+        this.sim.actorWaitsForDeparture({
+          actor: this,
+          station: this.current_station,
+          destination: this.nextPathStop(),
+        });
+      },
+    });
+  }
+
+  _cycleSchedule() {
+    if (this.current_schedule === this.schedule.length - 1) {
+      this.current_schedule = 0;
+    } else {
+      this.current_schedule += 1;
+    }
+  }
+
+  advanceSchedule() {
+    // advance the schedule to the next valid position
+    // if at last entry, go back home (schedule 0)
+    this._cycleSchedule();
+
+    // skip any entries, which have a time in the past (cannot go there anymore)
+    while (this.currentScheduleExpired()) {
+      this._cycleSchedule();
+    }
+  }
+
+  advancePath({ onNext, onArrivedAtDestination }) {
+    this.path_position += 1;
+    this.current_station = this.path[this.path_position];
+
+    if (this.path_position === this.path.length - 1) {
+      // arrived at destination
+      this.path = null;
+      this.path_position = null;
+      onArrivedAtDestination();
+    } else {
+      // go to next station in path
+      onNext();
+    }
+  }
+
+  preparePath({ onAlreadyThere, onPrepared }) {
+    const destination = this.schedule[this.current_schedule].station;
+    if (destination === this.current_station) {
+      onAlreadyThere();
+      return;
+    }
+    this.path = generatePathFromPredecessorMap(
+      this.sim.predecessorMaps[this.current_station],
+      destination
+    );
+    this.path_position = 0;
+    onPrepared();
+  }
+
+  nextPathStop() {
+    if (this.path === null || this.path_position === this.path.length - 1) {
+      return null;
+    }
+    return this.path[this.path_position + 1];
+  }
+}
+
+function buildActors(actorsData, sim) {
+  return actorsData.map(actorData => {
+    return new Actor({ ...actorData, sim });
+  });
+}
+
 export class Simulator {
-  constructor(stations, actors, predecessorMaps) {
+  constructor(stations, actorsData, predecessorMaps) {
     this.stations = stations;
-    this.actors = actors;
+    this.actors = buildActors(actorsData, this);
     this.predecessorMaps = predecessorMaps;
     this.time = 6 * 60;
     this.day = 0;
-    this.travel_queue = new PriorityQueue({
-      comparator: compareDateTime,
-      strategy: PriorityQueue.BinaryHeapStrategy,
-    });
-    this.queue = new PriorityQueue({
-      comparator: compareDateTime,
-      strategy: PriorityQueue.BinaryHeapStrategy,
-    });
+    this.travel_queue = new TimeQueue();
+    this.idle_queue = new TimeQueue();
     this.station_queues = Object.fromEntries(
       Object.entries(stations).map(([key, station]) => {
         const next_stops = Object.fromEntries(
@@ -52,14 +208,14 @@ export class Simulator {
       })
     );
 
-    this.arrivalCallback = null;
-    this.finishStayCallback = null;
-    this.waitCallback = null;
+    this.arrivalCallback = () => {};
+    this.finishStayCallback = () => {};
+    this.waitCallback = () => {};
   }
 
   startActors() {
     this.actors.forEach(actor => {
-      this.actorScheduleWait(actor);
+      actor.arriveAtScheduleLocation();
     });
   }
 
@@ -75,89 +231,20 @@ export class Simulator {
     }
   }
 
-  actorStayFinished(actor) {
-    // stay_until has expired, go to next entry in the schedule
-    const currentStation = actor.schedule[actor.current_schedule].station;
-
-    // advance the schedule to the next valid position
-    // if at last entry, go back home (schedule 0)
-    if (actor.current_schedule === actor.schedule.length - 1) {
-      actor.current_schedule = 0;
-    } else {
-      actor.current_schedule += 1;
-    }
-
-    // skip any entries, which have a time in the past (cannot go there anymore)
-    while (
-      actor.schedule[actor.current_schedule].time < this.time &&
-      actor.current_schedule !== 0
-    ) {
-      actor.current_schedule += 1;
-      if (actor.current_schedule === actor.schedule.length - 1) {
-        actor.current_schedule = 0;
-      }
-    }
-
-    const destination = actor.schedule[actor.current_schedule].station;
-    actor.path = generatePathFromPredecessorMap(
-      this.predecessorMaps[currentStation],
-      destination
-    );
-    actor.path_position = 0;
-
-    if (actor.path.length === 1) {
-      actor.path = null;
-      actor.path_position = null;
-      this.actorScheduleWait(actor);
-    } else {
-      const nextStation = actor.path[actor.path_position + 1];
-      this.station_queues[currentStation][nextStation].push(actor);
-    }
-
-    if (this.finishStayCallback !== null) {
-      this.finishStayCallback(
-        actor,
-        currentStation,
-        destination,
-        actor.schedule[actor.current_schedule].name
-      );
-    }
+  actorWaitsForDeparture({ actor, station, destination }) {
+    this.station_queues[station][destination].push(actor);
   }
 
-  actorScheduleWait(actor) {
-    const entry = actor.schedule[actor.current_schedule];
+  scheduleWait(actor, until) {
+    const time = timeToMinutes(until);
+    const queueItem = {
+      item: actor,
+      day: this.day + (time <= this.time),
+      time,
+    };
+    this.idle_queue.enqueue(queueItem);
 
-    // TODO manage infection due to stay
-
-    const time = timeToMinutes(entry.stay_until);
-    const queueItem = { actor, day: this.day + (time <= this.time), time };
-    this.queue.queue(queueItem);
-
-    if (this.waitCallback !== null) {
-      this.waitCallback(actor, queueItem.day, queueItem.time);
-    }
-  }
-
-  actorArrivedAtStation(actor) {
-    actor.path_position += 1;
-    actor.current_station = actor.path[actor.path_position];
-    actor.state = WAITING;
-
-    if (actor.path_position === actor.path.length - 1) {
-      // actor arrived at destination
-      actor.path = null;
-      actor.path_position = null;
-      this.actorScheduleWait(actor);
-    } else {
-      // go to next station in path
-      const currentStation = actor.path[actor.path_position];
-      const nextStation = actor.path[actor.path_position + 1];
-      this.station_queues[currentStation][nextStation].push(actor);
-    }
-
-    if (this.arrivalCallback !== null) {
-      this.arrivalCallback(actor);
-    }
+    this.waitCallback(actor, queueItem.day, queueItem.time);
   }
 
   handleInfectionTrigger(actors) {
@@ -186,26 +273,22 @@ export class Simulator {
   step() {
     this.stepTime();
 
-    while (
-      this.queue.length > 0 &&
-      this.queue.peek().day === this.day &&
-      this.queue.peek().time <= this.time
-    ) {
-      const actor = this.queue.dequeue().actor;
+    this.idle_queue.dequeueExpired(this.day, this.time, actor => {
+      actor.stayFinished();
+      this.finishStayCallback(
+        actor,
+        actor.current_station,
+        actor.nextPathStop(),
+        actor.schedule[actor.current_schedule].name
+      );
+    });
 
-      this.actorStayFinished(actor);
-    }
-
-    while (
-      this.travel_queue.length > 0 &&
-      this.travel_queue.peek().day === this.day &&
-      this.travel_queue.peek().time <= this.time
-    ) {
-      const arrived_actors = this.travel_queue.dequeue().actors;
-      arrived_actors.forEach(actor => {
-        this.actorArrivedAtStation(actor);
+    this.travel_queue.dequeueExpired(this.day, this.time, arrivedActors => {
+      arrivedActors.forEach(actor => {
+        actor.arriveAtNextPathStop();
+        this.arrivalCallback(actor);
       });
-    }
+    });
 
     if (this.time % TRAVEL_TIME === 0) {
       Object.entries(this.station_queues).forEach(([station, nextStations]) => {
@@ -214,12 +297,12 @@ export class Simulator {
             actors.forEach(actor => {
               actor.state = TRANSITIONING;
             });
-            this.travel_queue.queue({
+            this.travel_queue.enqueue({
               day:
                 this.day +
                 Math.floor((this.time + TRAVEL_TIME) / MINUTES_PER_DAY),
               time: (this.time + TRAVEL_TIME) % MINUTES_PER_DAY,
-              actors,
+              item: actors,
             });
             this.handleInfectionTrigger(actors);
             nextStations[next] = [];
