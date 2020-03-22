@@ -42,7 +42,7 @@ export function generatePredecessorMap(start, stations) {
   let queue = [];
   let seen = new Set();
   let predecessor = {
-    [start]: null
+    [start]: null,
   };
   seen.add(start);
   queue.push(start);
@@ -124,7 +124,6 @@ export function generateActors(actorTemplate, stations) {
     const schedule = actorTemplate.schedule.map(scheduleTemplate =>
       generateScheduleEntry(scheduleTemplate, station_names)
     );
-    const station_location = stations[schedule[0].station].position;
     let actor = {
       status: HEALTHY,
       schedule,
