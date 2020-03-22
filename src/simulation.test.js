@@ -211,7 +211,7 @@ describe('CLI Simulation', () => {
     );
   }
 
-  it.only('runs with example data', () => {
+  it('runs with example data', () => {
     let actors = generateActors(testAgentsTemplate, testStations).map(
       (actor, index) => {
         actor.name = index;
